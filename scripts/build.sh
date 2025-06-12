@@ -1,22 +1,22 @@
 #!/bin/bash
 
-# Get the absolute path of the script directory
+# Resolve full paths
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-BASE_DIR="$SCRIPT_DIR/.."
+BASE_DIR=$(realpath "$SCRIPT_DIR/..")
 BUILD_DIR="$BASE_DIR/build"
 
 # Default flags
 OVERWRITE=false
-JOBS_ARG="-j"  # Default: use all processors
+JOBS_ARG="-j"  # Use all processors by default
 
 # Help message
 show_help() {
     echo "Usage: ./build.sh [OPTIONS]"
-    echo
+    echo ""
     echo "Options:"
     echo "  -o, --overwrite         Remove existing build directory before building"
-    echo "  -j, --jobs <number>     Specify number of processors to use (default: all available)"
-    echo "  -h, --help              Display this help message"
+    echo "  -j, --jobs <number>     Number of processors to use (default: all)"
+    echo "  -h, --help              Show this help message"
 }
 
 # Parse arguments
@@ -37,20 +37,26 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+# Build submodules first
+echo "[build.sh, INFO] Building submodules..."
+"$BASE_DIR/scripts/submodules/build_submodules.sh" "$@"
+
+# Clean previous build if requested
 if [ "$OVERWRITE" = true ]; then
-    echo "[build.sh, INFO] Overwrite enabled: Cleaning previous build..."
+    echo "[build.sh, INFO] Overwrite enabled: Cleaning previous build directory at $BUILD_DIR"
     "$SCRIPT_DIR/cleanup.sh"
 fi
 
-# Create the build directory if it doesn't exist
+# Ensure build directory exists
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR" || exit 1
 
 # Run CMake and Make
-echo "[build.sh, INFO] Configuring the project with CMake..."
+echo "[build.sh, INFO] Configuring project with CMake in: $BUILD_DIR"
 cmake "$BASE_DIR"
 
-echo "[build.sh, INFO] Building the project with 'make $JOBS_ARG'..."
+echo "[build.sh, INFO] Building project with: make $JOBS_ARG"
 make $JOBS_ARG
 
-echo "[build.sh, INFO] Build complete. Library Files are in: $BASE_DIR/lib/"
+echo "[build.sh, INFO] Build complete."
+echo "[build.sh, INFO] Executables are in: $(realpath "$BUILD_DIR/bin")"

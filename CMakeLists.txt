@@ -4,31 +4,41 @@ project(AnalysisPipelineStages VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Output directory for built libraries (relative to top-level source directory)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
-# Include directories
-file(GLOB_RECURSE ALL_INCLUDE_PATHS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/include/*)
-foreach(path ${ALL_INCLUDE_PATHS})
-    if(IS_DIRECTORY ${path})
-        include_directories(${path})
-    endif()
+# Include directories - recursively add all include subfolders under this submodule
+file(GLOB_RECURSE ALL_INCLUDE_DIRS LIST_DIRECTORIES true
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/*
+)
+set(UNIQUE_INCLUDE_DIRS "")
+foreach(path IN LISTS ALL_INCLUDE_DIRS)
+  if(IS_DIRECTORY ${path})
+    list(APPEND UNIQUE_INCLUDE_DIRS ${path})
+  endif()
 endforeach()
 
-# Source and header files
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS src/*.cpp)
+list(REMOVE_DUPLICATES UNIQUE_INCLUDE_DIRS)
 
-# Glob all stage headers except LinkDef.h for dictionary generation
-file(GLOB_RECURSE ALL_STAGE_HEADERS CONFIGURE_DEPENDS include/stages/*.h)
+# Source files (recursively under src/)
+file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
+
+# Header files for dictionary generation (exclude LinkDef.h)
+file(GLOB_RECURSE ALL_STAGE_HEADERS CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/*.h
+)
 list(FILTER ALL_STAGE_HEADERS EXCLUDE REGEX "LinkDef\\.h$")
 
-# ROOT
+# Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Tree Core Hist RIO)
 if(NOT ROOT_FOUND)
-    message(FATAL_ERROR "ROOT not found. Make sure to source ROOT (e.g. 'source thisroot.sh').")
+  message(FATAL_ERROR "ROOT not found. Make sure to source ROOT (e.g. 'source thisroot.sh').")
 endif()
 include(${ROOT_USE_FILE})
 
-# spdlog
+# FetchContent for spdlog
 include(FetchContent)
 FetchContent_Declare(
   spdlog
@@ -37,7 +47,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-# nlohmann/json
+# FetchContent for nlohmann/json
 FetchContent_Declare(
   json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -45,27 +55,32 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-# Dictionary generation using filtered headers (exclude LinkDef.h) and LinkDef.h last
+# Generate ROOT dictionary
 ROOT_GENERATE_DICTIONARY(G__Stages
   ${ALL_STAGE_HEADERS}
-  LINKDEF ${CMAKE_SOURCE_DIR}/include/stages/LinkDef.h
+  LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/LinkDef.h
 )
 
-# Shared library
+# Create shared library for analysis pipeline stages
 add_library(analysis_pipeline_stages SHARED
   ${SRC_FILES}
   G__Stages.cxx
 )
 
-target_include_directories(analysis_pipeline_stages PUBLIC ${CMAKE_SOURCE_DIR}/include)
+# Include directories for the target
+target_include_directories(analysis_pipeline_stages PUBLIC
+  ${UNIQUE_INCLUDE_DIRS}
+)
 
+# Link libraries
 target_link_libraries(analysis_pipeline_stages PUBLIC
   ROOT::Core ROOT::RIO ROOT::Tree
   spdlog::spdlog
   nlohmann_json::nlohmann_json
 )
 
-# Install rule
+# Installation rules
 install(TARGETS analysis_pipeline_stages
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
