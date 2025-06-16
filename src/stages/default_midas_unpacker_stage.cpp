@@ -121,3 +121,8 @@ std::string DefaultMidasUnpackerStage::toHexString(const char* data, size_t size
     }
     return oss.str();
 }
+
+std::string DefaultMidasUnpackerStage::Name() const {
+    return "DefaultMidasUnpackerStage";
+}
+

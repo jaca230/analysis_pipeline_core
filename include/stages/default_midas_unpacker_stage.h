@@ -11,6 +11,8 @@ public:
 
     void ProcessMidasEvent(const TMEvent& event) override;
 
+    std::string Name() const override;
+
 private:
     nlohmann::json decodeBankData(const TMBank& bank, const TMEvent& event) const;
     std::string toHexString(const char* data, size_t size) const;
