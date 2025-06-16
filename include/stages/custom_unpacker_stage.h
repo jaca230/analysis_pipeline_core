@@ -34,8 +34,7 @@ private:
   std::string unpacker_type_;  // Provided in config JSON
   std::unique_ptr<unpackers::EventUnpacker> unpacker_;
   std::map<std::string, std::shared_ptr<dataProducts::DataProductPtrCollection>> collections_;
-
-  ClassDef(CustomMidasUnpackerStage, 1)
+  
 };
 
 #endif // ANALYSIS_PIPELINE_STAGES_CUSTOMMIDASUNPACKERSTAGE_H
