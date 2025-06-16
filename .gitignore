@@ -15,6 +15,10 @@
 /*.dll
 /*.dylib
 
+# Generated environment specific file
+.env
+
+
 # Generated files (e.g. moc, uic from Qt)
 moc_*.cpp
 ui_*.h
