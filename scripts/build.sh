@@ -84,7 +84,6 @@ cmake -DCMAKE_CXX_FLAGS="-Wno-cpp" "$BASE_DIR"
 
 echo "[build.sh] Building with make $JOBS_ARG"
 make $JOBS_ARG
-make install
 
 echo "[build.sh] Build complete."
 echo "[build.sh] Executables are in: $BUILD_DIR/bin/"
