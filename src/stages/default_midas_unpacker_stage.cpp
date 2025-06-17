@@ -54,13 +54,12 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
     }
 
     SafeTreeAccess([&](TTree* tree) {
-        static std::string json_str;
-        json_str = j.dump();
+        event_json_str_ = j.dump();  // store in a member variable, ensure lifetime
 
-        static TBranch* b = nullptr;
+        TBranch* b = tree->GetBranch("event_json");
         if (b == nullptr) {
-            spdlog::debug("[{}] Creating branch 'event_json'", Name());
-            b = tree->Branch("event_json", &json_str);
+            spdlog::debug("[{}] Creating branch 'event_json' for tree {}", Name(), (void*)tree);
+            b = tree->Branch("event_json", &event_json_str_);
         }
         spdlog::debug("[{}] Filling tree with event_json data", Name());
         tree->Fill();

@@ -16,6 +16,7 @@ public:
 private:
     nlohmann::json decodeBankData(const TMBank& bank, const TMEvent& event) const;
     std::string toHexString(const char* data, size_t size) const;
+    std::string event_json_str_;
 };
 
 #endif // DEFAULT_MIDAS_UNPACKER_STAGE_H
