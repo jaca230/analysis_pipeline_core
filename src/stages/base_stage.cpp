@@ -1,4 +1,4 @@
-#include "base_stage.h"
+#include "stages/base_stage.h"
 
 BaseStage::BaseStage() = default;
 BaseStage::~BaseStage() = default;

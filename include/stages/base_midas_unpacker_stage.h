@@ -1,7 +1,7 @@
 #ifndef ANALYSIS_PIPELINE_STAGES_BASEMIDASUNPACKERSTAGE_H
 #define ANALYSIS_PIPELINE_STAGES_BASEMIDASUNPACKERSTAGE_H
 
-#include "base_stage.h"
+#include "stages/base_stage.h"
 #include "midas.h"
 #include "midasio.h"
 

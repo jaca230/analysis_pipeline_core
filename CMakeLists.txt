@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Output directory for built libraries (relative to top-level source directory)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
-
 # Check MIDASSYS environment variable
 if(NOT DEFINED ENV{MIDASSYS})
   message(FATAL_ERROR
@@ -25,17 +24,8 @@ set(MIDASSYS_INCLUDE_DIRS
 )
 set(MIDASSYS_LIB_DIR $ENV{MIDASSYS}/lib)
 
-# Gather all recursive include directories under this project
-file(GLOB_RECURSE ALL_INCLUDE_DIRS LIST_DIRECTORIES true
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/*
-)
-set(UNIQUE_INCLUDE_DIRS "")
-foreach(path IN LISTS ALL_INCLUDE_DIRS)
-  if(IS_DIRECTORY ${path})
-    list(APPEND UNIQUE_INCLUDE_DIRS ${path})
-  endif()
-endforeach()
-list(REMOVE_DUPLICATES UNIQUE_INCLUDE_DIRS)
+# Include root directory (top-level include folder)
+set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Source files
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
@@ -44,7 +34,7 @@ file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
 
 # Headers for ROOT dictionary generation (exclude LinkDef.h)
 file(GLOB_RECURSE ALL_STAGE_HEADERS CONFIGURE_DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/*.h
+  ${PROJECT_INCLUDE_DIR}/stages/*.h
 )
 list(FILTER ALL_STAGE_HEADERS EXCLUDE REGEX "LinkDef\\.h$")
 
@@ -72,11 +62,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-# Generate ROOT dictionary with MIDAS includes passed to rootcling
+# Generate ROOT dictionary with proper include dirs for your project and MIDAS
 ROOT_GENERATE_DICTIONARY(G__Stages
   ${ALL_STAGE_HEADERS}
-  LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/LinkDef.h
-  OPTIONS -I$ENV{MIDASSYS}/include -I$ENV{MIDASSYS}/midasio -Wno-inconsistent-missing-override
+  LINKDEF ${PROJECT_INCLUDE_DIR}/stages/LinkDef.h
+  OPTIONS 
+    -I${PROJECT_INCLUDE_DIR} 
+    -I$ENV{MIDASSYS}/include 
+    -I$ENV{MIDASSYS}/midasio 
+    -Wno-inconsistent-missing-override
 )
 
 # Create shared library for analysis pipeline stages
@@ -85,10 +79,9 @@ add_library(analysis_pipeline_stages SHARED
   G__Stages.cxx
 )
 
-
 # Include directories for the target
 target_include_directories(analysis_pipeline_stages PUBLIC
-  ${UNIQUE_INCLUDE_DIRS}
+  ${PROJECT_INCLUDE_DIR}      # Add your top-level include
   ${MIDASSYS_INCLUDE_DIRS}
 )
 
@@ -100,7 +93,6 @@ target_link_libraries(analysis_pipeline_stages PUBLIC
   ROOT::Core ROOT::RIO ROOT::Tree
   spdlog::spdlog
   nlohmann_json::nlohmann_json
-  # Add MIDAS libs here if needed, e.g. midas, midasio, etc.
 )
 
 # Installation rules
