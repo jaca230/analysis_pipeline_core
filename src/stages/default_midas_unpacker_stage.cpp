@@ -4,12 +4,21 @@
 #include <iomanip>
 #include <chrono>
 
+#include <spdlog/spdlog.h>  // << Add this include
+
 using json = nlohmann::json;
 
-DefaultMidasUnpackerStage::DefaultMidasUnpackerStage() = default;
-DefaultMidasUnpackerStage::~DefaultMidasUnpackerStage() = default;
+DefaultMidasUnpackerStage::DefaultMidasUnpackerStage() {
+    spdlog::debug("[{}] Constructor called", Name());
+}
+DefaultMidasUnpackerStage::~DefaultMidasUnpackerStage() {
+    spdlog::debug("[{}] Destructor called", Name());
+}
 
 void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
+    spdlog::debug("[{}] ProcessMidasEvent called with event_id={}, serial_number={}",
+                  Name(), event.event_id, event.serial_number);
+
     json j;
     j["event_id"] = event.event_id;
     j["serial_number"] = event.serial_number;
@@ -20,15 +29,27 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
     j["bank_header_flags"] = event.bank_header_flags;
 
     TMEvent& mutable_event = const_cast<TMEvent&>(event);
+    spdlog::debug("[{}] Calling FindAllBanks()", Name());
     mutable_event.FindAllBanks();
 
     j["banks"] = json::array();
+    spdlog::debug("[{}] Found {} banks", Name(), mutable_event.banks.size());
+
     for (const auto& bank : mutable_event.banks) {
+        spdlog::debug("[{}] Processing bank: name='{}', type={}, data_size={}",
+                      Name(), bank.name, bank.type, bank.data_size);
+
         json jbank;
         jbank["name"] = bank.name;
         jbank["type"] = bank.type;
         jbank["data_size"] = bank.data_size;
-        jbank["data"] = decodeBankData(bank, mutable_event);
+
+        auto decoded_data = decodeBankData(bank, mutable_event);
+        spdlog::debug("[{}] Decoded bank data (type {}): size/length={}",
+                      Name(), bank.type,
+                      decoded_data.is_string() ? decoded_data.get<std::string>().size() : decoded_data.size());
+
+        jbank["data"] = std::move(decoded_data);
         j["banks"].push_back(jbank);
     }
 
@@ -38,18 +59,26 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
 
         static TBranch* b = nullptr;
         if (b == nullptr) {
+            spdlog::debug("[{}] Creating branch 'event_json'", Name());
             b = tree->Branch("event_json", &json_str);
         }
+        spdlog::debug("[{}] Filling tree with event_json data", Name());
         tree->Fill();
     });
 }
 
 json DefaultMidasUnpackerStage::decodeBankData(const TMBank& bank, const TMEvent& event) const {
     const char* bankData = event.GetBankData(&bank);
-    if (!bankData || bank.data_size == 0) return nullptr;
+    if (!bankData || bank.data_size == 0) {
+        spdlog::warn("[{}] Bank '{}' has null data or zero size", Name(), bank.name);
+        return nullptr;
+    }
 
     size_t dataSize = bank.data_size;
     json dataArray = json::array();
+
+    spdlog::debug("[{}] Decoding bank '{}' with type={} and dataSize={}",
+                  Name(), bank.name, bank.type, dataSize);
 
     switch (bank.type) {
         case TID_UINT8: {
@@ -103,13 +132,17 @@ json DefaultMidasUnpackerStage::decodeBankData(const TMBank& bank, const TMEvent
             break;
         }
         case TID_STRING: {
-            return std::string(bankData, dataSize);
+            std::string str(bankData, dataSize);
+            spdlog::debug("[{}] Decoded string bank data: '{}'", Name(), str);
+            return str;
         }
         default: {
+            spdlog::warn("[{}] Unknown bank type {}. Returning hex string", Name(), bank.type);
             return toHexString(bankData, dataSize);
         }
     }
 
+    spdlog::debug("[{}] Decoded array size: {}", Name(), dataArray.size());
     return dataArray;
 }
 
@@ -119,10 +152,11 @@ std::string DefaultMidasUnpackerStage::toHexString(const char* data, size_t size
         oss << std::hex << std::setw(2) << std::setfill('0')
             << (static_cast<uint8_t>(data[i]) & 0xFF);
     }
-    return oss.str();
+    std::string hexStr = oss.str();
+    spdlog::debug("[{}] Converted data to hex string: {}", Name(), hexStr);
+    return hexStr;
 }
 
 std::string DefaultMidasUnpackerStage::Name() const {
     return "DefaultMidasUnpackerStage";
 }
-
