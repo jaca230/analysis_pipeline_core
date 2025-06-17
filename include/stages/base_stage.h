@@ -14,6 +14,7 @@ public:
     virtual ~BaseStage();
 
     void Init(const nlohmann::json& parameters, TTree* tree, std::mutex* tree_mutex);
+    void SetTree(TTree* tree, std::mutex* tree_mutex);  // <-- NEW METHOD
 
     virtual void Process() = 0;
     virtual std::string Name() const = 0;

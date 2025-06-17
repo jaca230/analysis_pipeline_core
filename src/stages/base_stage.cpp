@@ -9,3 +9,9 @@ void BaseStage::Init(const nlohmann::json& parameters, TTree* tree, std::mutex* 
     tree_mutex_ = tree_mutex;
     OnInit();
 }
+
+
+void BaseStage::SetTree(TTree* tree, std::mutex* tree_mutex) {
+    tree_ = tree;
+    tree_mutex_ = tree_mutex;
+}
