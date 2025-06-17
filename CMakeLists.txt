@@ -4,37 +4,27 @@ project(AnalysisPipelineStages VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Output directory for built libraries (relative to top-level source directory)
+# Output directory for built libraries
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
-# Include directories - recursively add all include subfolders under this submodule
-file(GLOB_RECURSE ALL_INCLUDE_DIRS LIST_DIRECTORIES true
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/*
-)
-set(UNIQUE_INCLUDE_DIRS "")
-foreach(path IN LISTS ALL_INCLUDE_DIRS)
-  if(IS_DIRECTORY ${path})
-    list(APPEND UNIQUE_INCLUDE_DIRS ${path})
-  endif()
-endforeach()
+# Top-level include directory
+set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-list(REMOVE_DUPLICATES UNIQUE_INCLUDE_DIRS)
-
-# Source files (recursively under src/)
+# Source files
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
-# Header files for dictionary generation (exclude LinkDef.h)
+# Headers for ROOT dictionary (exclude LinkDef.h)
 file(GLOB_RECURSE ALL_STAGE_HEADERS CONFIGURE_DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/*.h
+  ${PROJECT_INCLUDE_DIR}/stages/*.h
 )
 list(FILTER ALL_STAGE_HEADERS EXCLUDE REGEX "LinkDef\\.h$")
 
 # Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Tree Core Hist RIO)
 if(NOT ROOT_FOUND)
-  message(FATAL_ERROR "ROOT not found. Make sure to source ROOT (e.g. 'source thisroot.sh').")
+  message(FATAL_ERROR "ROOT not found. Please source ROOT environment (e.g. 'source thisroot.sh').")
 endif()
 include(${ROOT_USE_FILE})
 
@@ -58,18 +48,19 @@ FetchContent_MakeAvailable(json)
 # Generate ROOT dictionary
 ROOT_GENERATE_DICTIONARY(G__Stages
   ${ALL_STAGE_HEADERS}
-  LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/LinkDef.h
+  LINKDEF ${PROJECT_INCLUDE_DIR}/stages/LinkDef.h
+  OPTIONS -I${PROJECT_INCLUDE_DIR} -Wno-inconsistent-missing-override
 )
 
-# Create shared library for analysis pipeline stages
+# Create shared library
 add_library(analysis_pipeline_stages SHARED
   ${SRC_FILES}
   G__Stages.cxx
 )
 
-# Include directories for the target
+# Include directories
 target_include_directories(analysis_pipeline_stages PUBLIC
-  ${UNIQUE_INCLUDE_DIRS}
+  ${PROJECT_INCLUDE_DIR}
 )
 
 # Link libraries

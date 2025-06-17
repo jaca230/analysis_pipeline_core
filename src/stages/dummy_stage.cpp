@@ -1,4 +1,4 @@
-#include "dummy_stage.h"
+#include "stages/dummy_stage.h"
 #include <spdlog/spdlog.h>
 #include <chrono>
 #include <thread>
