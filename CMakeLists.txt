@@ -5,6 +5,9 @@ project(AnalysisPipelineStages VERSION 0.1 LANGUAGES CXX)
 # 1. Make PIC the default globally, so all libraries (and executables) get compiled position independent
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# 2. Enable generation of compile_commands.json for IDEs/tools (Ninja, VSCode, clangd, etc.)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(FetchContent)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -51,6 +54,12 @@ ROOT_GENERATE_DICTIONARY(G__Stages
 add_library(analysis_pipeline_stages SHARED
   ${SRC_FILES}
   ${CMAKE_CURRENT_BINARY_DIR}/G__Stages.cxx
+)
+
+# Set version properties for the shared library
+set_target_properties(analysis_pipeline_stages PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION 0
 )
 
 # Use target_compile_features instead of setting CMAKE_CXX_STANDARD globally
