@@ -22,21 +22,21 @@ set(MIDASSYS_INCLUDE_DIRS
 )
 set(MIDASSYS_LIB_DIR $ENV{MIDASSYS}/lib)
 
-# Project include directory
-set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Project include directory (absolute path)
+get_filename_component(PROJECT_INCLUDE_DIR_ABS ${CMAKE_CURRENT_SOURCE_DIR}/include ABSOLUTE)
 
-# Collect source files recursively
+# Collect source files recursively (absolute paths guaranteed by GLOB_RECURSE)
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
 # Collect headers for ROOT dictionary, excluding LinkDef.h explicitly
 file(GLOB_RECURSE ALL_STAGE_HEADERS CONFIGURE_DEPENDS
-  ${PROJECT_INCLUDE_DIR}/stages/*.h
+  ${PROJECT_INCLUDE_DIR_ABS}/stages/*.h
 )
 list(FILTER ALL_STAGE_HEADERS EXCLUDE REGEX "LinkDef\\.h$")
 
-# Find ROOT (better use components argument for clarity)
+# Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree)
 if(NOT ROOT_FOUND)
   message(FATAL_ERROR "ROOT not found. Make sure to source ROOT environment (e.g. 'source thisroot.sh').")
@@ -44,7 +44,7 @@ endif()
 
 include(${ROOT_USE_FILE})
 
-# Use FetchContent for spdlog and nlohmann_json
+# FetchContent for spdlog and nlohmann_json
 include(FetchContent)
 
 FetchContent_Declare(
@@ -61,43 +61,40 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
-# Generate ROOT dictionary (note: modern ROOT might support ROOT::ROOT generate dictionary better)
+# ROOT dictionary generation — use absolute paths everywhere
 ROOT_GENERATE_DICTIONARY(G__Stages
   ${ALL_STAGE_HEADERS}
-  LINKDEF ${PROJECT_INCLUDE_DIR}/stages/LinkDef.h
-  OPTIONS 
-    -I${PROJECT_INCLUDE_DIR} 
-    -I$ENV{MIDASSYS}/include 
-    -I$ENV{MIDASSYS}/midasio 
+  LINKDEF ${PROJECT_INCLUDE_DIR_ABS}/stages/LinkDef.h
+  OPTIONS
+    -I${PROJECT_INCLUDE_DIR_ABS}
+    -I$ENV{MIDASSYS}/include
+    -I$ENV{MIDASSYS}/midasio
     -Wno-inconsistent-missing-override
 )
 
-# Create shared library target with sources and generated dictionary
+# Create shared library with source files and generated dictionary (use absolute path to generated source)
 add_library(analysis_pipeline_stages SHARED
   ${SRC_FILES}
-  ${CMAKE_CURRENT_BINARY_DIR}/G__Stages.cxx  # Use full path for generated source
+  ${CMAKE_CURRENT_BINARY_DIR}/G__Stages.cxx
 )
 
-# Use target_include_directories with PUBLIC to propagate includes
+# Include directories (PUBLIC so consumers get includes transitively)
 target_include_directories(analysis_pipeline_stages PUBLIC
-  ${PROJECT_INCLUDE_DIR}
+  ${PROJECT_INCLUDE_DIR_ABS}
   ${MIDASSYS_INCLUDE_DIRS}
 )
 
-# Link to MIDASSYS libs explicitly (avoid link_directories, link full path if possible)
+# Link libraries (explicit full paths for MIDAS libs, targets for others)
 target_link_libraries(analysis_pipeline_stages PUBLIC
   ROOT::Core ROOT::RIO ROOT::Tree
   spdlog::spdlog
   nlohmann_json::nlohmann_json
-  # Add MIDAS libraries explicitly, e.g. (adjust as needed):
   ${MIDASSYS_LIB_DIR}/libmfe.a
   ${MIDASSYS_LIB_DIR}/libmidas.a
 )
 
-# Installation rules
+# Install rules
 install(TARGETS analysis_pipeline_stages
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
-
-# Optionally add export configs here for better downstream usage
