@@ -8,28 +8,25 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # 2. Enable generation of compile_commands.json for IDEs/tools (Ninja, VSCode, clangd, etc.)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(FetchContent)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(cmake/CPM.cmake)
 
-# Disable installing spdlog/nlohmann_json; this project handles export/install manually
-set(spdlog_INSTALL OFF CACHE BOOL "" FORCE)
-set(nlohmann_json_INSTALL OFF CACHE BOOL "" FORCE)
+# --- Use CPM to add dependencies ---
 
-# Fetch header-only dependencies
-FetchContent_Declare(
-  spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG v1.13.0
+CPMAddPackage(
+  NAME spdlog
+  GITHUB_REPOSITORY gabime/spdlog
+  VERSION 1.13.0
+  OPTIONS "SPDLOG_INSTALL OFF"  # your original setup disables install
 )
-FetchContent_MakeAvailable(spdlog)
 
-FetchContent_Declare(
-  nlohmann_json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3
+CPMAddPackage(
+  NAME nlohmann_json
+  GITHUB_REPOSITORY nlohmann/json
+  VERSION 3.11.3
+  OPTIONS "JSON_BuildTests OFF"
 )
-FetchContent_MakeAvailable(nlohmann_json)
 
 # Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree)
