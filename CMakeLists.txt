@@ -67,6 +67,12 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/analysis_pipeline_stages
   )
 
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/libStages.rootmap
+    ${CMAKE_CURRENT_BINARY_DIR}/libStages_rdict.pcm
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/analysis_pipeline_stages
   )
