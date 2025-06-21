@@ -23,15 +23,16 @@ void RandomDataGeneratorStage::Process() {
     double randomValue = dist_(rng_);
     auto param = std::make_unique<TParameter<double>>(productName_.c_str(), randomValue);
 
-    // Create PipelineDataProduct to hold the TObject
-    auto pdp = std::make_unique<PipelineDataProduct>();
-    pdp->setName(productName_);
-    pdp->setObject(std::move(param));
-
-    // Use the manager to add or update the data product (thread-safe)
-    getDataProductManager()->addOrUpdate(productName_, std::move(pdp));
+    // Always create and overwrite the product entry
+    getDataProductManager()->withProducts([&](auto& products) {
+        auto pdp = std::make_unique<PipelineDataProduct>();
+        pdp->setName(productName_);
+        pdp->setObject(std::move(param));
+        products[productName_] = std::move(pdp);
+    });
 
     spdlog::debug("[{}] Generated value {} for '{}'", Name(), randomValue, productName_);
 }
+
 
 

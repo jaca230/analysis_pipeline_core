@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Dependencies (require consumer to provide them)
 find_package(spdlog REQUIRED)
 find_package(nlohmann_json REQUIRED)
-find_package(ROOT REQUIRED COMPONENTS Core RIO Tree)
+find_package(ROOT REQUIRED COMPONENTS Core Hist RIO Tree)
 include(${ROOT_USE_FILE})
 
 # Gather sources/headers
@@ -50,7 +50,7 @@ target_include_directories(analysis_pipeline_stages PUBLIC
 )
 
 target_link_libraries(analysis_pipeline_stages PUBLIC
-  ROOT::Core ROOT::RIO ROOT::Tree
+  ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
   spdlog::spdlog
   nlohmann_json::nlohmann_json
 )
