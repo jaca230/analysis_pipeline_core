@@ -1,17 +1,12 @@
 #include "stages/base_stage.h"
+#include <stdexcept>
 
 BaseStage::BaseStage() = default;
 BaseStage::~BaseStage() = default;
 
-void BaseStage::Init(const nlohmann::json& parameters, TTree* tree, std::mutex* tree_mutex) {
+void BaseStage::Init(const nlohmann::json& parameters,
+                     PipelineDataProductManager* dataProductManager) {
     parameters_ = parameters;
-    tree_ = tree;
-    tree_mutex_ = tree_mutex;
+    dataProductManager_ = dataProductManager;
     OnInit();
-}
-
-
-void BaseStage::SetTree(TTree* tree, std::mutex* tree_mutex) {
-    tree_ = tree;
-    tree_mutex_ = tree_mutex;
 }

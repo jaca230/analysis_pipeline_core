@@ -1,7 +1,7 @@
 #ifndef DEFAULT_MIDAS_UNPACKER_STAGE_H
 #define DEFAULT_MIDAS_UNPACKER_STAGE_H
 
-#include "stages/base_midas_unpacker_stage.h"
+#include "stages/unpacking/base_midas_unpacker_stage.h"
 #include <nlohmann/json.hpp>
 
 class DefaultMidasUnpackerStage : public BaseMidasUnpackerStage {

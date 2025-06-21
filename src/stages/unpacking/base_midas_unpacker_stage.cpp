@@ -1,4 +1,4 @@
-#include "stages/base_midas_unpacker_stage.h"
+#include "stages/unpacking/base_midas_unpacker_stage.h"
 #include <stdexcept>
 
 BaseMidasUnpackerStage::BaseMidasUnpackerStage() = default;

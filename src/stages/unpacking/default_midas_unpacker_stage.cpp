@@ -1,4 +1,4 @@
-#include "stages/default_midas_unpacker_stage.h"
+#include "stages/unpacking/default_midas_unpacker_stage.h"
 #include <TTree.h>
 #include <sstream>
 #include <iomanip>
@@ -29,7 +29,6 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
     j["bank_header_flags"] = event.bank_header_flags;
 
     TMEvent& mutable_event = const_cast<TMEvent&>(event);
-    spdlog::debug("[{}] Calling FindAllBanks()", Name());
     mutable_event.FindAllBanks();
 
     j["banks"] = json::array();
@@ -53,18 +52,19 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
         j["banks"].push_back(jbank);
     }
 
-    SafeTreeAccess([&](TTree* tree) {
-        event_json_str_ = j.dump();  // store in a member variable, ensure lifetime
+    // Wrap the JSON string in a TNamed
+    auto jsonString = std::make_unique<TNamed>("event_json", j.dump().c_str());
 
-        TBranch* b = tree->GetBranch("event_json");
-        if (b == nullptr) {
-            spdlog::debug("[{}] Creating branch 'event_json' for tree {}", Name(), (void*)tree);
-            b = tree->Branch("event_json", &event_json_str_);
-        }
-        spdlog::debug("[{}] Filling tree with event_json data", Name());
-        tree->Fill();
+    getDataProductManager()->withProducts([&](auto& products) {
+        auto pdp = std::make_unique<PipelineDataProduct>();
+        pdp->setName("event_json");
+        pdp->setObject(std::move(jsonString));
+        products["event_json"] = std::move(pdp);
     });
+
+    spdlog::debug("[{}] Created PipelineDataProduct for event_json", Name());
 }
+
 
 json DefaultMidasUnpackerStage::decodeBankData(const TMBank& bank, const TMEvent& event) const {
     const char* bankData = event.GetBankData(&bank);
