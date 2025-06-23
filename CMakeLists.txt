@@ -108,7 +108,7 @@ foreach(dir IN LISTS MIDASSYS_INCLUDE_DIRS)
   target_include_directories(analysis_pipeline_stages PUBLIC $<BUILD_INTERFACE:${dir}>)
 endforeach()
 
-# Link dependencies
+# --- FORCE linking of unpacker libs with -Wl,--no-as-needed to keep them ---
 target_link_libraries(analysis_pipeline_stages PUBLIC
   ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
   spdlog::spdlog
@@ -119,6 +119,15 @@ target_link_libraries(analysis_pipeline_stages PUBLIC
   unpacker::nalu_unpacking
   ${MIDASSYS_LIB_DIR}/libmfe.a
   ${MIDASSYS_LIB_DIR}/libmidas.a
+)
+
+target_link_options(analysis_pipeline_stages PUBLIC "-Wl,--no-as-needed")
+
+# --- Set RPATH for runtime dynamic loader to find unpacker libs ---
+set_target_properties(analysis_pipeline_stages PROPERTIES
+  BUILD_WITH_INSTALL_RPATH TRUE
+  INSTALL_RPATH "$ORIGIN/../" # Adjust path as needed to point to unpacker libs location relative to this lib
+  INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
 # === Installation section ===

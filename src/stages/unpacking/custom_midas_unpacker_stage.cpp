@@ -4,11 +4,26 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 
+#include <TROOT.h>
+#include <TClass.h>
+#include <TClassTable.h>
+#include <TClass.h>
+#include <iostream>
+#include <string>
+
 CustomMidasUnpackerStage::CustomMidasUnpackerStage() = default;
 
 CustomMidasUnpackerStage::~CustomMidasUnpackerStage() = default;
 
 void CustomMidasUnpackerStage::OnInit() {
+    TIter nextClass(gROOT->GetListOfClasses());
+    TClass* cls1 = nullptr;
+
+    std::cout << "Available unpacker classes in namespace 'unpackers':\n";
+
+    while ((cls1 = (TClass*)nextClass())) {
+        std::cout << cls1->GetName() << "\n";
+    }
     try {
         unpackerClassName_ = parameters_.at("unpacker_class").get<std::string>();
     } catch (const std::exception& e) {
