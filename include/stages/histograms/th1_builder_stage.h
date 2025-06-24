@@ -24,6 +24,8 @@ private:
     int bins_ = 100;
     double min_ = 0.0;
     double max_ = 1.0;
+
+    ClassDefOverride(TH1BuilderStage, 1);
 };
 
 #endif // ANALYSIS_PIPELINE_STAGES_TH1_BUILDER_STAGE_H

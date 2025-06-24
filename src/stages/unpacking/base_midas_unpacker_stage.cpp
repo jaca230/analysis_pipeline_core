@@ -1,6 +1,8 @@
 #include "stages/unpacking/base_midas_unpacker_stage.h"
 #include <stdexcept>
 
+ClassImp(BaseMidasUnpackerStage)
+
 BaseMidasUnpackerStage::BaseMidasUnpackerStage() = default;
 BaseMidasUnpackerStage::~BaseMidasUnpackerStage() = default;
 
