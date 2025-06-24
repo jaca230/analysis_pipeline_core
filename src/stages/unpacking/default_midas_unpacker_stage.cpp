@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <chrono>
 
+ClassImp(DefaultMidasUnpackerStage)
+
 #include <spdlog/spdlog.h>  // << Add this include
 
 using json = nlohmann::json;

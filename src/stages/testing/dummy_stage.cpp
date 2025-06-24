@@ -5,6 +5,8 @@
 #include <iomanip>  // for put_time
 #include <ctime>    // for std::localtime
 
+ClassImp(DummyStage)
+
 DummyStage::DummyStage() = default;
 DummyStage::~DummyStage() = default;
 

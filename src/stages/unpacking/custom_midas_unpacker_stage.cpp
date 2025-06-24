@@ -5,55 +5,53 @@
 #include <stdexcept>
 
 #include <TROOT.h>
-#include <TClass.h>
 #include <TClassTable.h>
-#include <TClass.h>
 #include <iostream>
 #include <string>
+
+ClassImp(CustomMidasUnpackerStage)
 
 CustomMidasUnpackerStage::CustomMidasUnpackerStage() = default;
 
 CustomMidasUnpackerStage::~CustomMidasUnpackerStage() = default;
 
 void CustomMidasUnpackerStage::OnInit() {
-    TIter nextClass(gROOT->GetListOfClasses());
-    TClass* cls1 = nullptr;
+    spdlog::debug("[CustomMidasUnpackerStage::OnInit] Starting initialization");
 
-    std::cout << "Available unpacker classes in namespace 'unpackers':\n";
-
-    while ((cls1 = (TClass*)nextClass())) {
-        std::cout << cls1->GetName() << "\n";
-    }
     try {
         unpackerClassName_ = parameters_.at("unpacker_class").get<std::string>();
+        spdlog::debug("[CustomMidasUnpackerStage::OnInit] Unpacker class from config: '{}'", unpackerClassName_);
     } catch (const std::exception& e) {
-        spdlog::error("[CustomMidasUnpackerStage] Missing or invalid 'unpacker_class' config: {}", e.what());
+        spdlog::error("[CustomMidasUnpackerStage::OnInit] Missing or invalid 'unpacker_class' config: {}", e.what());
         throw;
     }
 
     TClass* cls = TClass::GetClass(unpackerClassName_.c_str());
     if (!cls) {
-        spdlog::error("[CustomMidasUnpackerStage] Unknown unpacker class '{}'", unpackerClassName_);
+        spdlog::error("[CustomMidasUnpackerStage::OnInit] Unknown unpacker class '{}'", unpackerClassName_);
         throw std::runtime_error("Unknown unpacker class: " + unpackerClassName_);
     }
 
+    spdlog::debug("[CustomMidasUnpackerStage::OnInit] Creating instance of '{}'", unpackerClassName_);
     TObject* obj = static_cast<TObject*>(cls->New());
     if (!obj) {
-        spdlog::error("[CustomMidasUnpackerStage] Failed to instantiate unpacker of class '{}'", unpackerClassName_);
+        spdlog::error("[CustomMidasUnpackerStage::OnInit] Failed to instantiate unpacker '{}'", unpackerClassName_);
         throw std::runtime_error("Failed to instantiate: " + unpackerClassName_);
     }
 
     unpacker_.reset(dynamic_cast<unpackers::EventUnpacker*>(obj));
     if (!unpacker_) {
         delete obj;
-        spdlog::error("[CustomMidasUnpackerStage] Unpacker '{}' is not derived from EventUnpacker", unpackerClassName_);
+        spdlog::error("[CustomMidasUnpackerStage::OnInit] '{}' is not derived from EventUnpacker", unpackerClassName_);
         throw std::runtime_error("Unpacker is not derived from EventUnpacker");
     }
 
-    spdlog::debug("[CustomMidasUnpackerStage] Instantiated unpacker of type '{}'", unpackerClassName_);
+    spdlog::debug("[CustomMidasUnpackerStage::OnInit] Successfully instantiated unpacker '{}'", unpackerClassName_);
 }
 
 void CustomMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
+    spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Processing event");
+
     if (!unpacker_) {
         spdlog::error("[CustomMidasUnpackerStage] No unpacker instantiated; skipping event");
         return;
@@ -61,43 +59,59 @@ void CustomMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
 
     TMEvent& mutable_event = const_cast<TMEvent&>(event);
     mutable_event.FindAllBanks();
+    spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Called FindAllBanks() on event");
 
     unpacker_->UnpackEvent(&mutable_event);
+    spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Called UnpackEvent() using unpacker '{}'", unpackerClassName_);
 
     const auto& collections = unpacker_->GetCollections();
+    spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Unpacker returned {} collections", collections.size());
 
     std::unordered_map<std::string, std::unique_ptr<PipelineDataProduct>> newProducts;
 
     for (const auto& [label, vecPtr] : collections) {
-        if (!vecPtr || vecPtr->empty()) continue;
+        if (!vecPtr) {
+            spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Skipping null vector for label '{}'", label);
+            continue;
+        }
+        if (vecPtr->empty()) {
+            spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Skipping empty vector for label '{}'", label);
+            continue;
+        }
 
         auto list = std::make_unique<TList>();
         list->SetOwner(kTRUE);
 
+        int addedCount = 0;
         for (const auto& shared_dp : *vecPtr) {
             if (!shared_dp) continue;
             TObject* clone = shared_dp->Clone();
             if (!clone) continue;
             list->Add(clone);
+            ++addedCount;
         }
 
-        if (list->IsEmpty()) continue;
+        if (list->IsEmpty()) {
+            spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] No valid objects cloned for label '{}'", label);
+            continue;
+        }
 
         auto pdp = std::make_unique<PipelineDataProduct>();
         pdp->setName(label);
         pdp->setObject(std::move(list));
-
         newProducts[label] = std::move(pdp);
+
+        spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Created PipelineDataProduct for label '{}' with {} objects", label, addedCount);
     }
 
     getDataProductManager()->withProducts([&](auto& products) {
         for (auto& [name, pdp] : newProducts) {
             products[name] = std::move(pdp);
+            spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Registered data product '{}'", name);
         }
     });
 
-    spdlog::debug("[CustomMidasUnpackerStage] Registered {} PipelineDataProducts from unpacker '{}'",
-                  newProducts.size(), unpackerClassName_);
+    spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Registered {} total data products", newProducts.size());
 }
 
 std::string CustomMidasUnpackerStage::Name() const {

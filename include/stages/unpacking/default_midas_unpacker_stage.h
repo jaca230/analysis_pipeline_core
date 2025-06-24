@@ -17,6 +17,8 @@ private:
     nlohmann::json decodeBankData(const TMBank& bank, const TMEvent& event) const;
     std::string toHexString(const char* data, size_t size) const;
     std::string event_json_str_;
+
+    ClassDefOverride(DefaultMidasUnpackerStage, 1);  // Use ClassDefOverride for ROOT compatibility
 };
 
 #endif // DEFAULT_MIDAS_UNPACKER_STAGE_H

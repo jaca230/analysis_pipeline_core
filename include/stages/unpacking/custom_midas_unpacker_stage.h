@@ -27,6 +27,8 @@ private:
     std::unique_ptr<unpackers::EventUnpacker> unpacker_;
 
     std::string unpackerClassName_;  ///< Store unpacker class name for logging
+
+    ClassDefOverride(CustomMidasUnpackerStage, 1);  // Use ClassDefOverride for ROOT compatibility
 };
 
 #endif // STAGES_UNPACKING_CUSTOM_MIDAS_UNPACKER_STAGE_H
