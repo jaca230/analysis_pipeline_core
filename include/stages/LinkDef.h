@@ -8,5 +8,6 @@
 #pragma link C++ class DummyStage+;
 #pragma link C++ class RandomDataGeneratorStage+;
 #pragma link C++ class TH1BuilderStage+;
+#pragma link C++ class ClearProductsStage+;
 
 #endif

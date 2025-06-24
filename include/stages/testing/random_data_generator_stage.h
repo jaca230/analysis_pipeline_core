@@ -23,6 +23,8 @@ private:
 
     std::mt19937 rng_;
     std::uniform_real_distribution<double> dist_;
+
+    ClassDefOverride(RandomDataGeneratorStage, 1);  // Use ClassDefOverride for ROOT compatibility
 };
 
 #endif // ANALYSIS_PIPELINE_STAGES_RANDOM_DATA_GENERATOR_STAGE_H

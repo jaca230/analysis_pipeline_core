@@ -14,6 +14,9 @@ public:
 
 protected:
     void OnInit() override;  // override this instead of Init
+
+private:
+    ClassDefOverride(DummyStage, 1);  // Use ClassDefOverride for ROOT compatibility
 };
 
 #endif // ANALYSIS_PIPELINE_STAGES_DUMMYSTAGE_H

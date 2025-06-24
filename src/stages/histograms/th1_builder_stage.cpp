@@ -2,10 +2,12 @@
 #include <TParameter.h>
 #include <spdlog/spdlog.h>
 
+ClassImp(TH1BuilderStage)
+
 void TH1BuilderStage::OnInit() {
     inputProductName_ = parameters_.value("input_product", "");
     histogramName_ = parameters_.value("product_name", "hist");
-    valueKey_ = parameters_.value("value_key", "value");  // for extensibility
+    valueKey_ = parameters_.value("value_key", "value");
     title_ = parameters_.value("title", histogramName_);
     bins_ = parameters_.value("bins", 100);
     min_ = parameters_.value("min", 0.0);

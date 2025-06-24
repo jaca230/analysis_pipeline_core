@@ -3,6 +3,8 @@
 #include <TParameter.h>
 #include <spdlog/spdlog.h>
 
+ClassImp(RandomDataGeneratorStage)
+
 RandomDataGeneratorStage::RandomDataGeneratorStage()
     : rng_(std::random_device{}()), dist_(0.0, 1.0) {}
 
