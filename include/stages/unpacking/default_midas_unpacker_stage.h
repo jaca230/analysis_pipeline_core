@@ -9,12 +9,12 @@ public:
     DefaultMidasUnpackerStage();
     ~DefaultMidasUnpackerStage() override;
 
-    void ProcessMidasEvent(const TMEvent& event) override;
+    void ProcessMidasEvent(TMEvent& event) override;
 
     std::string Name() const override;
 
 private:
-    nlohmann::json decodeBankData(const TMBank& bank, const TMEvent& event) const;
+    nlohmann::json decodeBankData(const TMBank& bank, TMEvent& event) const;
     std::string toHexString(const char* data, size_t size) const;
     std::string event_json_str_;
 

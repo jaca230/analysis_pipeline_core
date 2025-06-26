@@ -3,24 +3,26 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <spdlog/spdlog.h>
+#include <TObjString.h>
 
 ClassImp(DefaultMidasUnpackerStage)
-
-#include <spdlog/spdlog.h>  // << Add this include
 
 using json = nlohmann::json;
 
 DefaultMidasUnpackerStage::DefaultMidasUnpackerStage() {
     spdlog::debug("[{}] Constructor called", Name());
 }
+
 DefaultMidasUnpackerStage::~DefaultMidasUnpackerStage() {
     spdlog::debug("[{}] Destructor called", Name());
 }
 
-void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
+void DefaultMidasUnpackerStage::ProcessMidasEvent(TMEvent& event) {
     spdlog::debug("[{}] ProcessMidasEvent called with event_id={}, serial_number={}",
                   Name(), event.event_id, event.serial_number);
 
+    // Build JSON representation of the event
     json j;
     j["event_id"] = event.event_id;
     j["serial_number"] = event.serial_number;
@@ -30,13 +32,11 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
     j["event_header_size"] = event.event_header_size;
     j["bank_header_flags"] = event.bank_header_flags;
 
-    TMEvent& mutable_event = const_cast<TMEvent&>(event);
-    mutable_event.FindAllBanks();
+    event.FindAllBanks();
+    spdlog::debug("[{}] Found {} banks", Name(), event.banks.size());
 
     j["banks"] = json::array();
-    spdlog::debug("[{}] Found {} banks", Name(), mutable_event.banks.size());
-
-    for (const auto& bank : mutable_event.banks) {
+    for (const auto& bank : event.banks) {
         spdlog::debug("[{}] Processing bank: name='{}', type={}, data_size={}",
                       Name(), bank.name, bank.type, bank.data_size);
 
@@ -45,30 +45,36 @@ void DefaultMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
         jbank["type"] = bank.type;
         jbank["data_size"] = bank.data_size;
 
-        auto decoded_data = decodeBankData(bank, mutable_event);
+        auto decoded_data = decodeBankData(bank, event);
+
+        size_t data_length = 0;
+        if (decoded_data.is_string()) {
+            const std::string& str = decoded_data.template get<std::string>();
+            data_length = str.size();
+        } else {
+            data_length = decoded_data.size();
+        }
+
         spdlog::debug("[{}] Decoded bank data (type {}): size/length={}",
-                      Name(), bank.type,
-                      decoded_data.is_string() ? decoded_data.get<std::string>().size() : decoded_data.size());
+                    Name(), bank.type, data_length);
 
         jbank["data"] = std::move(decoded_data);
-        j["banks"].push_back(jbank);
+        j["banks"].push_back(std::move(jbank));
     }
 
-    // Wrap the JSON string in a TNamed
-    auto jsonString = std::make_unique<TNamed>("event_json", j.dump().c_str());
+    // Wrap JSON string in a TObjString
+    auto jsonString = std::make_unique<TObjString>(j.dump().c_str());
 
-    getDataProductManager()->withProducts([&](auto& products) {
-        auto pdp = std::make_unique<PipelineDataProduct>();
-        pdp->setName("event_json");
-        pdp->setObject(std::move(jsonString));
-        products["event_json"] = std::move(pdp);
-    });
+    // Add or update the PipelineDataProduct in the manager
+    auto pdp = std::make_unique<PipelineDataProduct>();
+    pdp->setName("event_json");
+    pdp->setObject(std::move(jsonString));
+    getDataProductManager()->addOrUpdate("event_json", std::move(pdp));
 
     spdlog::debug("[{}] Created PipelineDataProduct for event_json", Name());
 }
 
-
-json DefaultMidasUnpackerStage::decodeBankData(const TMBank& bank, const TMEvent& event) const {
+json DefaultMidasUnpackerStage::decodeBankData(const TMBank& bank, TMEvent& event) const {
     const char* bankData = event.GetBankData(&bank);
     if (!bankData || bank.data_size == 0) {
         spdlog::warn("[{}] Bank '{}' has null data or zero size", Name(), bank.name);

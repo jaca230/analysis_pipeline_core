@@ -25,13 +25,13 @@ void RandomDataGeneratorStage::Process() {
     double randomValue = dist_(rng_);
     auto param = std::make_unique<TParameter<double>>(productName_.c_str(), randomValue);
 
-    // Always create and overwrite the product entry
-    getDataProductManager()->withProducts([&](auto& products) {
-        auto pdp = std::make_unique<PipelineDataProduct>();
-        pdp->setName(productName_);
-        pdp->setObject(std::move(param));
-        products[productName_] = std::move(pdp);
-    });
+    // Wrap in PipelineDataProduct and store
+    auto product = std::make_unique<PipelineDataProduct>();
+    product->setName(productName_);
+    product->setObject(std::move(param));
+
+    // Overwrite product entry (thread-safe)
+    getDataProductManager()->addOrUpdate(productName_, std::move(product));
 
     spdlog::debug("[{}] Generated value {} for '{}'", Name(), randomValue, productName_);
 }

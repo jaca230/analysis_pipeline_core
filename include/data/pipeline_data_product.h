@@ -1,41 +1,40 @@
-#ifndef ANALYSISPIPELINE_PIPELINE_DATA_PRODUCT_H
-#define ANALYSISPIPELINE_PIPELINE_DATA_PRODUCT_H
-
-#include <TObject.h>
-#include <TClass.h>
-#include <TDataMember.h>
-#include <TBufferJSON.h>
-#include <TCollection.h>
-#include <TList.h>
+#pragma once
 
 #include <memory>
 #include <string>
 #include <map>
 #include <nlohmann/json.hpp>
 
+#include <TObject.h>
+#include <TClass.h>
+#include <TDataMember.h>
+
+/**
+ * @class PipelineDataProduct
+ * @brief Wraps a TObject and provides reflection and serialization utilities.
+ */
 class PipelineDataProduct {
 public:
-    PipelineDataProduct() = default; // default ctor required by ROOT and STL containers
+    PipelineDataProduct() = default;
+    explicit PipelineDataProduct(std::unique_ptr<TObject> obj);
 
-    // Getters
-    const std::string& getName() const { return name_; }
-    std::string getClassName() const;
-    TObject* getObject() const { return object_.get(); }
-
-    // Setters
+    // Accessors
+    TObject* getObject() const;
     void setObject(std::unique_ptr<TObject> obj);
+
+    const std::string& getName() const;
     void setName(const std::string& name);
 
-    // Member access
+    std::string getClassName() const;
+
+    // ROOT Reflection Utilities
     std::pair<void*, std::string> getMemberPointerAndType(const std::string& memberName) const;
     std::map<std::string, std::pair<void*, std::string>> getAllMembers() const;
 
-    // Serialization
+    // JSON Serialization
     nlohmann::json serializeToJson() const;
 
 private:
     std::unique_ptr<TObject> object_;
     std::string name_;
 };
-
-#endif // ANALYSISPIPELINE_PIPELINE_DATA_PRODUCT_H

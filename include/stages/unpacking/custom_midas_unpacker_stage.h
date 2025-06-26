@@ -17,7 +17,7 @@ public:
     CustomMidasUnpackerStage();
     ~CustomMidasUnpackerStage() override;
 
-    void ProcessMidasEvent(const TMEvent& event) override;
+    void ProcessMidasEvent(TMEvent& event) override;
     std::string Name() const override;
 
 protected:

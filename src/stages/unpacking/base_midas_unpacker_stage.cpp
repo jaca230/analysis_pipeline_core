@@ -6,7 +6,7 @@ ClassImp(BaseMidasUnpackerStage)
 BaseMidasUnpackerStage::BaseMidasUnpackerStage() = default;
 BaseMidasUnpackerStage::~BaseMidasUnpackerStage() = default;
 
-void BaseMidasUnpackerStage::SetCurrentEvent(const TMEvent& event) {
+void BaseMidasUnpackerStage::SetCurrentEvent(TMEvent& event) {
     current_event_ = &event;
 }
 

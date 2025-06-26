@@ -22,78 +22,79 @@ void TH1BuilderStage::OnInit() {
 }
 
 void TH1BuilderStage::Process() {
-    getDataProductManager()->withProducts([&](auto& products) {
-        // Find the input data product by name
-        auto itInput = products.find(inputProductName_);
-        if (itInput == products.end() || !itInput->second) {
+    try {
+        // Check that the input product exists before attempting checkout
+        if (!getDataProductManager()->hasProduct(inputProductName_)) {
             spdlog::error("[{}] Input product '{}' not found", Name(), inputProductName_);
             return;
         }
 
-        PipelineDataProduct* inputProduct = itInput->second.get();
+        // Checkout input product for reading
+        auto inputHandle = getDataProductManager()->checkoutRead(inputProductName_);
+        if (!inputHandle.get()) {
+            spdlog::error("[{}] Failed to lock input product '{}'", Name(), inputProductName_);
+            return;
+        }
 
         // Extract member pointer and type
-        auto [memberPtr, memberType] = inputProduct->getMemberPointerAndType(valueKey_);
+        auto [memberPtr, memberType] = inputHandle->getMemberPointerAndType(valueKey_);
         if (!memberPtr) {
             spdlog::error("[{}] Member '{}' not found in product '{}'", Name(), valueKey_, inputProductName_);
             return;
         }
 
-        // We'll store the extracted value here if possible
+        // Attempt to convert the value into a double
         double valueToFill = 0.0;
         bool canFill = false;
 
-        // Cast based on type string — handle supported types
         if (memberType == "double" || memberType == "Double_t") {
             valueToFill = *static_cast<const double*>(memberPtr);
             canFill = true;
-        }
-        else if (memberType == "float" || memberType == "Float_t") {
+        } else if (memberType == "float" || memberType == "Float_t") {
             valueToFill = static_cast<double>(*static_cast<const float*>(memberPtr));
             canFill = true;
-        }
-        else if (memberType == "int" || memberType == "Int_t") {
+        } else if (memberType == "int" || memberType == "Int_t") {
             valueToFill = static_cast<double>(*static_cast<const int*>(memberPtr));
             canFill = true;
-        }
-        else if (memberType == "short" || memberType == "Short_t") {
+        } else if (memberType == "short" || memberType == "Short_t") {
             valueToFill = static_cast<double>(*static_cast<const short*>(memberPtr));
             canFill = true;
-        }
-        else {
+        } else {
             spdlog::error("[{}] Unsupported member type '{}'", Name(), memberType);
             return;
         }
 
-        // Find or create the histogram product
-        auto itHist = products.find(histogramName_);
+        if (!canFill) return;
 
-        TH1* hist = nullptr;
-
-        if (itHist != products.end() && itHist->second) {
-            // Existing histogram product found
-            TObject* obj = itHist->second->getObject();
-            hist = dynamic_cast<TH1*>(obj);
-            if (!hist) {
-                spdlog::error("[{}] Object named '{}' exists but is not a TH1", Name(), histogramName_);
-                return;
-            }
-        }
-        else {
-            // Create new histogram of type TH1D (for example)
+        // Create the histogram if it doesn't exist
+        if (!getDataProductManager()->hasProduct(histogramName_)) {
             auto newHist = std::make_unique<TH1D>(histogramName_.c_str(), title_.c_str(), bins_, min_, max_);
-
-            // Create new PipelineDataProduct wrapping the histogram
             auto newProduct = std::make_unique<PipelineDataProduct>();
             newProduct->setName(histogramName_);
             newProduct->setObject(std::move(newHist));
+            getDataProductManager()->addOrUpdate(histogramName_, std::move(newProduct));
+        }
 
-            hist = dynamic_cast<TH1*>(newProduct->getObject());
-            products[histogramName_] = std::move(newProduct);
+        // Checkout histogram product for writing
+        auto histHandle = getDataProductManager()->checkoutWrite(histogramName_);
+        if (!histHandle.get()) {
+            spdlog::error("[{}] Failed to lock histogram product '{}'", Name(), histogramName_);
+            return;
+        }
+
+        auto* hist = dynamic_cast<TH1*>(histHandle.get()->getObject());
+        if (!hist) {
+            spdlog::error("[{}] Object named '{}' exists but is not a TH1", Name(), histogramName_);
+            return;
         }
 
         // Fill the histogram
         hist->Fill(valueToFill);
-    });
+
+    } catch (const std::exception& e) {
+        spdlog::error("[{}] Exception in Process: {}", Name(), e.what());
+    }
 }
+
+
 

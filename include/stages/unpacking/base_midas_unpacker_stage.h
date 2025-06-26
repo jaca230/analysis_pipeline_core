@@ -11,16 +11,16 @@ public:
     ~BaseMidasUnpackerStage() override;
 
     // TMEvent must be externally provided to this stage
-    void SetCurrentEvent(const TMEvent& event);
+    void SetCurrentEvent(TMEvent& event);
 
     // Core processing logic must be implemented by concrete unpackers
     void Process() final override;
 
 protected:
-    const TMEvent* current_event_ = nullptr;
+    TMEvent* current_event_ = nullptr;
 
     // Derived classes implement this
-    virtual void ProcessMidasEvent(const TMEvent& event) = 0;
+    virtual void ProcessMidasEvent(TMEvent& event) = 0;
 
     ClassDef(BaseMidasUnpackerStage, 1)
 };

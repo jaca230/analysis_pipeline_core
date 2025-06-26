@@ -18,13 +18,11 @@ void ClearProductsStage::OnInit() {
 }
 
 void ClearProductsStage::Process() {
-    getDataProductManager()->withProducts([&](auto& products) {
-        for (const auto& name : productsToClear_) {
-            if (products.erase(name) > 0) {
-                spdlog::debug("[{}] Cleared product '{}'", Name(), name);
-            } else {
-                spdlog::debug("[{}] Product '{}' not found", Name(), name);
-            }
-        }
-    });
+    if (productsToClear_.empty()) return;
+
+    getDataProductManager()->removeMultiple(productsToClear_);
+
+    for (const auto& name : productsToClear_) {
+        spdlog::debug("[{}] Removed product '{}'", Name(), name);
+    }
 }

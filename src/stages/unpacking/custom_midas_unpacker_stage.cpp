@@ -49,7 +49,7 @@ void CustomMidasUnpackerStage::OnInit() {
     spdlog::debug("[CustomMidasUnpackerStage::OnInit] Successfully instantiated unpacker '{}'", unpackerClassName_);
 }
 
-void CustomMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
+void CustomMidasUnpackerStage::ProcessMidasEvent(TMEvent& event) {
     spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Processing event");
 
     if (!unpacker_) {
@@ -57,17 +57,16 @@ void CustomMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
         return;
     }
 
-    TMEvent& mutable_event = const_cast<TMEvent&>(event);
-    mutable_event.FindAllBanks();
+    event.FindAllBanks();
     spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Called FindAllBanks() on event");
 
-    unpacker_->UnpackEvent(&mutable_event);
+    unpacker_->UnpackEvent(&event);
     spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Called UnpackEvent() using unpacker '{}'", unpackerClassName_);
 
     const auto& collections = unpacker_->GetCollections();
     spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Unpacker returned {} collections", collections.size());
 
-    std::unordered_map<std::string, std::unique_ptr<PipelineDataProduct>> newProducts;
+    std::unordered_map<std::string, std::unique_ptr<PipelineDataProduct>> productsToAdd;
 
     for (const auto& [label, vecPtr] : collections) {
         if (!vecPtr) {
@@ -99,20 +98,22 @@ void CustomMidasUnpackerStage::ProcessMidasEvent(const TMEvent& event) {
         auto pdp = std::make_unique<PipelineDataProduct>();
         pdp->setName(label);
         pdp->setObject(std::move(list));
-        newProducts[label] = std::move(pdp);
 
-        spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Created PipelineDataProduct for label '{}' with {} objects", label, addedCount);
+        productsToAdd.emplace(label, std::move(pdp));
+
+        spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Prepared data product '{}' with {} objects", label, addedCount);
     }
 
-    getDataProductManager()->withProducts([&](auto& products) {
-        for (auto& [name, pdp] : newProducts) {
-            products[name] = std::move(pdp);
-            spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Registered data product '{}'", name);
+    if (!productsToAdd.empty()) {
+        std::vector<std::pair<std::string, std::unique_ptr<PipelineDataProduct>>> productsVec;
+        productsVec.reserve(productsToAdd.size());
+        for (auto& p : productsToAdd) {
+            productsVec.emplace_back(std::move(p));
         }
-    });
-
-    spdlog::debug("[CustomMidasUnpackerStage::ProcessMidasEvent] Registered {} total data products", newProducts.size());
+        getDataProductManager()->addOrUpdateMultiple(std::move(productsVec));
+    }
 }
+
 
 std::string CustomMidasUnpackerStage::Name() const {
     return "CustomMidasUnpackerStage";
