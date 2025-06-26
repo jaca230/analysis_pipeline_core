@@ -198,3 +198,131 @@ nlohmann::json PipelineDataProductManager::serializeAll() const {
 
     return output;
 }
+
+// Get all unique tags used across all products
+std::unordered_set<std::string> PipelineDataProductManager::getAllTags() const {
+    std::shared_lock managerLock(managerMutex_);
+    std::unordered_set<std::string> result;
+    for (const auto& [_, entry] : products_) {
+        const auto& tags = entry.product->getTags();
+        result.insert(tags.begin(), tags.end());
+    }
+    return result;
+}
+
+// Remove all products that contain the given tag
+void PipelineDataProductManager::removeByTag(const std::string& tag) {
+    std::unique_lock managerLock(managerMutex_);
+    for (auto it = products_.begin(); it != products_.end(); ) {
+        if (it->second.product->hasTag(tag)) {
+            it = products_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+// Remove all products that DO NOT contain the given tag
+void PipelineDataProductManager::removeExcludingTag(const std::string& tag) {
+    std::unique_lock managerLock(managerMutex_);
+    for (auto it = products_.begin(); it != products_.end(); ) {
+        if (!it->second.product->hasTag(tag)) {
+            it = products_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+// Get names of products with the specified tag
+std::vector<std::string> PipelineDataProductManager::getNamesWithTag(const std::string& tag) const {
+    std::shared_lock managerLock(managerMutex_);
+    std::vector<std::string> names;
+    for (const auto& [name, entry] : products_) {
+        if (entry.product->hasTag(tag)) {
+            names.push_back(name);
+        }
+    }
+    return names;
+}
+
+// Remove products with ANY of the specified tags
+void PipelineDataProductManager::removeByTags(const std::unordered_set<std::string>& tags) {
+    std::unique_lock managerLock(managerMutex_);
+    for (auto it = products_.begin(); it != products_.end(); ) {
+        const auto& prodTags = it->second.product->getTags();
+        if (std::any_of(tags.begin(), tags.end(),
+                        [&](const std::string& tag) { return prodTags.count(tag); })) {
+            it = products_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+// Remove products that DO NOT have ANY of the specified tags
+void PipelineDataProductManager::removeExcludingTags(const std::unordered_set<std::string>& tags) {
+    std::unique_lock managerLock(managerMutex_);
+    for (auto it = products_.begin(); it != products_.end(); ) {
+        const auto& prodTags = it->second.product->getTags();
+        if (std::none_of(tags.begin(), tags.end(),
+                         [&](const std::string& tag) { return prodTags.count(tag); })) {
+            it = products_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+// Get names of products with ANY of the specified tags
+std::vector<std::string> PipelineDataProductManager::getNamesWithAnyTags(const std::unordered_set<std::string>& tags) const {
+    std::shared_lock managerLock(managerMutex_);
+    std::vector<std::string> names;
+    for (const auto& [name, entry] : products_) {
+        const auto& prodTags = entry.product->getTags();
+        if (std::any_of(tags.begin(), tags.end(),
+                        [&](const std::string& tag) { return prodTags.count(tag); })) {
+            names.push_back(name);
+        }
+    }
+    return names;
+}
+
+// Get names of products that contain ALL of the specified tags
+std::vector<std::string> PipelineDataProductManager::getNamesWithAllTags(const std::unordered_set<std::string>& tags) const {
+    std::shared_lock managerLock(managerMutex_);
+    std::vector<std::string> names;
+    for (const auto& [name, entry] : products_) {
+        const auto& prodTags = entry.product->getTags();
+        if (std::all_of(tags.begin(), tags.end(),
+                        [&](const std::string& tag) { return prodTags.count(tag); })) {
+            names.push_back(name);
+        }
+    }
+    return names;
+}
+
+// Get names of products that have exactly the specified tag set (no extras)
+std::vector<std::string> PipelineDataProductManager::getNamesWithExactTags(const std::unordered_set<std::string>& tags) const {
+    std::shared_lock managerLock(managerMutex_);
+    std::vector<std::string> names;
+    for (const auto& [name, entry] : products_) {
+        const auto& prodTags = entry.product->getTags();
+        if (prodTags == tags) {
+            names.push_back(name);
+        }
+    }
+    return names;
+}
+
+// Get names of products that have no tags at all
+std::vector<std::string> PipelineDataProductManager::getNamesWithNoTags() const {
+    std::shared_lock managerLock(managerMutex_);
+    std::vector<std::string> names;
+    for (const auto& [name, entry] : products_) {
+        if (entry.product->getTags().empty()) {
+            names.push_back(name);
+        }
+    }
+    return names;
+}

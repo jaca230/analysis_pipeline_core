@@ -78,3 +78,20 @@ nlohmann::json PipelineDataProduct::serializeToJson() const {
     }
 }
 
+void PipelineDataProduct::addTag(const std::string& tag) {
+    tags_.insert(tag);
+}
+
+void PipelineDataProduct::removeTag(const std::string& tag) {
+    tags_.erase(tag);
+}
+
+bool PipelineDataProduct::hasTag(const std::string& tag) const {
+    return tags_.find(tag) != tags_.end();
+}
+
+const std::unordered_set<std::string>& PipelineDataProduct::getTags() const {
+    return tags_;
+}
+
+

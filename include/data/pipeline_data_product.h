@@ -34,7 +34,14 @@ public:
     // JSON Serialization
     nlohmann::json serializeToJson() const;
 
+    // Tag Management
+    void addTag(const std::string& tag);
+    void removeTag(const std::string& tag);
+    bool hasTag(const std::string& tag) const;
+    const std::unordered_set<std::string>& getTags() const;
+
 private:
     std::unique_ptr<TObject> object_;
     std::string name_;
+    std::unordered_set<std::string> tags_;
 };

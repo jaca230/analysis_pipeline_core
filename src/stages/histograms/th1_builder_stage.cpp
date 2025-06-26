@@ -72,6 +72,8 @@ void TH1BuilderStage::Process() {
             auto newProduct = std::make_unique<PipelineDataProduct>();
             newProduct->setName(histogramName_);
             newProduct->setObject(std::move(newHist));
+            newProduct->addTag("histogram");
+            newProduct->addTag("built_by_th1_builder");
             getDataProductManager()->addOrUpdate(histogramName_, std::move(newProduct));
         }
 

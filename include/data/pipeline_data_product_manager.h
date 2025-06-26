@@ -37,6 +37,22 @@ public:
 
     nlohmann::json serializeAll() const;
 
+    //tags
+    std::unordered_set<std::string> getAllTags() const;
+
+    // Single tag
+    void removeByTag(const std::string& tag);
+    void removeExcludingTag(const std::string& tag);
+    std::vector<std::string> getNamesWithTag(const std::string& tag) const;
+
+    // Multiple tags
+    void removeByTags(const std::unordered_set<std::string>& tags);
+    void removeExcludingTags(const std::unordered_set<std::string>& tags);
+    std::vector<std::string> getNamesWithAnyTags(const std::unordered_set<std::string>& tags) const;
+    std::vector<std::string> getNamesWithAllTags(const std::unordered_set<std::string>& tags) const;
+    std::vector<std::string> getNamesWithExactTags(const std::unordered_set<std::string>& tags) const;
+    std::vector<std::string> getNamesWithNoTags() const;
+
 private:
     struct ProductEntry {
         std::unique_ptr<PipelineDataProduct> product;

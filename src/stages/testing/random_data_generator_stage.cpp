@@ -29,6 +29,8 @@ void RandomDataGeneratorStage::Process() {
     auto product = std::make_unique<PipelineDataProduct>();
     product->setName(productName_);
     product->setObject(std::move(param));
+    product->addTag("random");
+    product->addTag("built_by_random_data_generator");
 
     // Overwrite product entry (thread-safe)
     getDataProductManager()->addOrUpdate(productName_, std::move(product));
