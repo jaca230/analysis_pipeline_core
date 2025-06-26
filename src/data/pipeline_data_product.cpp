@@ -77,3 +77,4 @@ nlohmann::json PipelineDataProduct::serializeToJson() const {
         return nlohmann::json{};
     }
 }
+

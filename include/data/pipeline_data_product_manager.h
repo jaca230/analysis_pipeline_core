@@ -7,6 +7,7 @@
 #include <vector>
 #include <variant>
 #include <stdexcept>
+#include <nlohmann/json.hpp>
 
 #include "data/pipeline_data_product.h"
 #include "data/pipeline_data_product_lock.h"
@@ -33,6 +34,8 @@ public:
     PipelineDataProductLock checkoutWrite(const std::string& name);
     std::vector<PipelineDataProductLock> checkoutReadMultiple(const std::vector<std::string>& names);
     std::vector<PipelineDataProductLock> checkoutWriteMultiple(const std::vector<std::string>& names);
+
+    nlohmann::json serializeAll() const;
 
 private:
     struct ProductEntry {

@@ -186,3 +186,15 @@ std::vector<PipelineDataProductLock> PipelineDataProductManager::checkoutWriteMu
 
     return handles;
 }
+
+nlohmann::json PipelineDataProductManager::serializeAll() const {
+    nlohmann::json output;
+
+    std::shared_lock<std::shared_mutex> lock(managerMutex_);
+    for (const auto& [name, entry] : products_) {
+        std::shared_lock<std::shared_mutex> entryLock(entry.mutex);
+        output[name] = entry.product->serializeToJson();
+    }
+
+    return output;
+}
