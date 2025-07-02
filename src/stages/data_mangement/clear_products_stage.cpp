@@ -1,5 +1,5 @@
 #include "stages/data_management/clear_products_stage.h"
-#include <spdlog/spdlog.h>
+#include "spdlog/spdlog.h"
 
 ClassImp(ClearProductsStage) 
 

@@ -2,7 +2,7 @@
 #include <TBufferJSON.h>
 #include <TCollection.h>
 #include <TList.h>
-#include <spdlog/spdlog.h>
+#include "spdlog/spdlog.h"
 #include <stdexcept>
 
 PipelineDataProduct::PipelineDataProduct(std::unique_ptr<TObject> obj)
