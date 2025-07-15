@@ -82,6 +82,14 @@ public:
         }
     }
 
+    template <typename T>
+    bool has(const std::string& key) const {
+        auto it = data_.find(key);
+        if (it == data_.end()) return false;
+        return it->second.type() == typeid(std::reference_wrapper<T>) ||
+            it->second.type() == typeid(T);
+    }
+
     // --- Common operations ---
 
     bool contains(const std::string& key) const {
