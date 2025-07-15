@@ -2,17 +2,17 @@
 #define ANALYSIS_PIPELINE_STAGES_BASEINPUTSTAGE_H
 
 #include "stages/base_stage.h"
-#include <any>
+#include "context/input_bundle.h"
 
 class BaseInputStage : public BaseStage {
 public:
     BaseInputStage() = default;
     ~BaseInputStage() override = default;
 
-    // Receives externally injected input (event, frame, chunk, etc.)
-    virtual void SetInput(std::any input) = 0;
+    // Receives externally injected input as InputBundle reference.
+    virtual void SetInput(const InputBundle& input) = 0;
 
-    ClassDefOverride(BaseInputStage, 1);
+    ClassDefOverride(BaseInputStage, 2);
 };
 
 #endif // ANALYSIS_PIPELINE_STAGES_BASEINPUTSTAGE_H
