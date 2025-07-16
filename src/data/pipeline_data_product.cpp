@@ -1,25 +1,37 @@
 #include "data/pipeline_data_product.h"
+
 #include <TBufferJSON.h>
+#include <TClass.h>
+#include <TDataMember.h>
 #include <TCollection.h>
 #include <TList.h>
-#include "spdlog/spdlog.h"
+#include <TString.h>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 
-PipelineDataProduct::PipelineDataProduct(std::unique_ptr<TObject> obj)
-    : object_(std::move(obj)) {}
-
-TObject* PipelineDataProduct::getObject() const {
-    return object_.get();
-}
-
+// Object setters
 void PipelineDataProduct::setObject(std::unique_ptr<TObject> obj) {
     if (!obj) {
-        spdlog::warn("PipelineDataProduct::setObject called with null object");
+        spdlog::warn("PipelineDataProduct::setObject called with null unique_ptr");
+        return;
+    }
+    object_ = std::shared_ptr<TObject>(std::move(obj));
+}
+
+void PipelineDataProduct::setSharedObject(std::shared_ptr<TObject> obj) {
+    if (!obj) {
+        spdlog::warn("PipelineDataProduct::setSharedObject called with null shared_ptr");
         return;
     }
     object_ = std::move(obj);
 }
 
+// Object accessor
+TObject* PipelineDataProduct::getObject() const {
+    return object_ ? object_.get() : nullptr;
+}
+
+// Name
 const std::string& PipelineDataProduct::getName() const {
     return name_;
 }
@@ -28,15 +40,20 @@ void PipelineDataProduct::setName(const std::string& name) {
     name_ = name;
 }
 
+// Class name
 std::string PipelineDataProduct::getClassName() const {
-    if (!object_) return "";
-    return object_->IsA()->GetName();
+    if (TObject* obj = getObject()) {
+        return obj->IsA()->GetName();
+    }
+    return "";
 }
 
+// Member lookup
 std::pair<void*, std::string> PipelineDataProduct::getMemberPointerAndType(const std::string& memberName) const {
-    if (!object_) return {nullptr, ""};
+    TObject* obj = getObject();
+    if (!obj) return {nullptr, ""};
 
-    TClass* cls = object_->IsA();
+    TClass* cls = obj->IsA();
     if (!cls) return {nullptr, ""};
 
     TDataMember* dm = cls->GetDataMember(memberName.c_str());
@@ -45,39 +62,44 @@ std::pair<void*, std::string> PipelineDataProduct::getMemberPointerAndType(const
         return {nullptr, ""};
     }
 
-    void* ptr = reinterpret_cast<char*>(object_.get()) + dm->GetOffset();
+    void* ptr = reinterpret_cast<char*>(obj) + dm->GetOffset();
     return {ptr, dm->GetFullTypeName()};
 }
 
+// All members
 std::map<std::string, std::pair<void*, std::string>> PipelineDataProduct::getAllMembers() const {
     std::map<std::string, std::pair<void*, std::string>> members;
+    TObject* obj = getObject();
+    if (!obj) return members;
 
-    if (!object_) return members;
-    TClass* cls = object_->IsA();
+    TClass* cls = obj->IsA();
     if (!cls) return members;
 
-    const TCollection* list = cls->GetListOfDataMembers();
-    TIter next(list);
+    TIter next(cls->GetListOfDataMembers());
     TDataMember* dm = nullptr;
     while ((dm = dynamic_cast<TDataMember*>(next()))) {
-        void* ptr = reinterpret_cast<char*>(object_.get()) + dm->GetOffset();
+        void* ptr = reinterpret_cast<char*>(obj) + dm->GetOffset();
         members[dm->GetName()] = {ptr, dm->GetFullTypeName()};
     }
 
     return members;
 }
 
+// Serialization
 nlohmann::json PipelineDataProduct::serializeToJson() const {
-    if (!object_) return nlohmann::json{};
+    TObject* obj = getObject();
+    if (!obj) return {};
+
     try {
-        TString jsonStr = TBufferJSON::ConvertToJSON(object_.get());
+        TString jsonStr = TBufferJSON::ConvertToJSON(obj);
         return nlohmann::json::parse(jsonStr.Data());
     } catch (const std::exception& e) {
         spdlog::error("Failed to serialize PipelineDataProduct '{}': {}", name_, e.what());
-        return nlohmann::json{};
+        return {};
     }
 }
 
+// Tags
 void PipelineDataProduct::addTag(const std::string& tag) {
     tags_.insert(tag);
 }
@@ -93,5 +115,3 @@ bool PipelineDataProduct::hasTag(const std::string& tag) const {
 const std::unordered_set<std::string>& PipelineDataProduct::getTags() const {
     return tags_;
 }
-
-

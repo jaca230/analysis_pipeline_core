@@ -49,6 +49,14 @@ public:
         }
     }
 
+    template <typename T>
+    bool has(const std::string& key) const {
+        auto it = data_.find(key);
+        if (it == data_.end()) return false;
+        return it->second.type() == typeid(std::reference_wrapper<T>) ||
+            it->second.type() == typeid(T);
+    }
+
     // --- Value-based (owning) interface ---
 
     template <typename T>
@@ -80,14 +88,6 @@ public:
         } catch (const std::bad_any_cast&) {
             throw std::runtime_error("InputBundle: bad type cast for key '" + key + "' (value)");
         }
-    }
-
-    template <typename T>
-    bool has(const std::string& key) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) return false;
-        return it->second.type() == typeid(std::reference_wrapper<T>) ||
-            it->second.type() == typeid(T);
     }
 
     // --- Common operations ---

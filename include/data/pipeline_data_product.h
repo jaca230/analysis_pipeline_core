@@ -2,25 +2,25 @@
 
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <map>
-#include <nlohmann/json.hpp>
+#include <variant>
 
+#include <nlohmann/json.hpp>
 #include <TObject.h>
-#include <TClass.h>
-#include <TDataMember.h>
 
 /**
  * @class PipelineDataProduct
- * @brief Wraps a TObject and provides reflection and serialization utilities.
+ * @brief Wraps a TObject and provides reflection, tagging, and serialization utilities.
  */
 class PipelineDataProduct {
 public:
     PipelineDataProduct() = default;
-    explicit PipelineDataProduct(std::unique_ptr<TObject> obj);
 
     // Accessors
     TObject* getObject() const;
     void setObject(std::unique_ptr<TObject> obj);
+    void setSharedObject(std::shared_ptr<TObject> obj);
 
     const std::string& getName() const;
     void setName(const std::string& name);
@@ -41,7 +41,8 @@ public:
     const std::unordered_set<std::string>& getTags() const;
 
 private:
-    std::unique_ptr<TObject> object_;
+    std::shared_ptr<TObject> object_;
     std::string name_;
     std::unordered_set<std::string> tags_;
 };
+
