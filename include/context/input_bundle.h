@@ -41,6 +41,13 @@ public:
         }
     }
 
+    template <typename T>
+    bool has(const std::string& key) const {
+        auto it = data_.find(key);
+        if (it == data_.end()) return false;
+        return std::any_cast<T>(&it->second) != nullptr;
+    }
+
     // Check key existence
     bool contains(const std::string& key) const {
         return data_.find(key) != data_.end();
