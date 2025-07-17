@@ -1,9 +1,9 @@
-# AnalysisPipelineStages
+# analysis_pipeline_core
 
 [![C++17](https://img.shields.io/badge/C++-17-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
-**AnalysisPipelineStages** is a modular C++ shared library providing reusable pipeline stages for data analysis workflows built on top of ROOT and popular header-only libraries like `spdlog` and `nlohmann_json`. It is designed to be easily integrated into your own analysis framework, either as a standalone library or as a submodule.
+**analysis_pipeline_core** is a modular C++ shared library providing reusable pipeline stages for data analysis workflows built on top of ROOT and popular header-only libraries like `spdlog` and `nlohmann_json`. It is designed to be easily integrated into your own analysis framework, either as a standalone library or as a submodule.
 
 ---
 
