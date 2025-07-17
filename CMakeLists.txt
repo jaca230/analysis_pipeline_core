@@ -40,7 +40,7 @@ if(spdlog_ADDED)
   add_library(spdlog_header_only INTERFACE)
   target_include_directories(spdlog_header_only INTERFACE
     $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
   add_library(spdlog::spdlog ALIAS spdlog_header_only)
 endif()
@@ -57,7 +57,7 @@ if(nlohmann_json_ADDED)
   add_library(nlohmann_json_header_only INTERFACE)
   target_include_directories(nlohmann_json_header_only INTERFACE
     $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
   add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
 endif()
@@ -101,7 +101,7 @@ target_compile_features(analysis_pipeline_stages_core PUBLIC cxx_std_17)
 # Include directories: your headers + CPM downloaded header-only libs
 target_include_directories(analysis_pipeline_stages_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/analysis_pipeline_stages_core>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 # Linking

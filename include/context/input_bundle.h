@@ -27,15 +27,15 @@ public:
         data_[key] = std::forward<T>(value);
     }
 
-    // Get stored object by type
+    // Get stored object by type - fixed to handle references properly
     template <typename T>
-    T& get(const std::string& key) const {
+    T get(const std::string& key) const {
         auto it = data_.find(key);
         if (it == data_.end()) {
             throw std::runtime_error("InputBundle: key '" + key + "' not found");
         }
         try {
-            return std::any_cast<T&>(it->second);
+            return std::any_cast<T>(it->second);
         } catch (const std::bad_any_cast&) {
             throw std::runtime_error("InputBundle: bad type cast for key '" + key + "'");
         }
@@ -85,6 +85,5 @@ public:
 private:
     std::unordered_map<std::string, std::any> data_;
 };
-
 
 #endif  // ANALYSIS_PIPELINE_CONTEXT_INPUT_BUNDLE_H
