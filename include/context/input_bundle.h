@@ -10,14 +10,6 @@
 #include <ostream>
 #include <vector>
 
-/**
- * InputBundle is a heterogeneous, optionally owning input container designed for
- * passing per-event data to pipeline stages. It supports both reference-based
- * (non-owning) and value-based (owning) semantics using type-erased storage.
- *
- * Typical use is setRef/getRef for fast, zero-copy input access. For flexibility,
- * setValue/getValue allow copying data into the bundle explicitly.
- */
 class InputBundle {
 public:
     InputBundle() = default;
@@ -29,43 +21,15 @@ public:
     InputBundle(InputBundle&&) = default;
     InputBundle& operator=(InputBundle&&) = default;
 
-    // --- Reference-based (non-owning) interface ---
-
+    // Set any object by value (including shared_ptr<T>)
     template <typename T>
-    void setRef(const std::string& key, T& value) {
-        data_[key] = std::ref(value);
+    void set(const std::string& key, T&& value) {
+        data_[key] = std::forward<T>(value);
     }
 
+    // Get stored object by type
     template <typename T>
-    T& getRef(const std::string& key) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) {
-            throw std::runtime_error("InputBundle: key '" + key + "' not found");
-        }
-        try {
-            return std::any_cast<std::reference_wrapper<T>>(it->second).get();
-        } catch (const std::bad_any_cast&) {
-            throw std::runtime_error("InputBundle: bad type cast for key '" + key + "' (ref)");
-        }
-    }
-
-    template <typename T>
-    bool has(const std::string& key) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) return false;
-        return it->second.type() == typeid(std::reference_wrapper<T>) ||
-            it->second.type() == typeid(T);
-    }
-
-    // --- Value-based (owning) interface ---
-
-    template <typename T>
-    void setValue(const std::string& key, T value) {
-        data_[key] = std::move(value);
-    }
-
-    template <typename T>
-    T& getValue(const std::string& key) {
+    T& get(const std::string& key) const {
         auto it = data_.find(key);
         if (it == data_.end()) {
             throw std::runtime_error("InputBundle: key '" + key + "' not found");
@@ -73,25 +37,11 @@ public:
         try {
             return std::any_cast<T&>(it->second);
         } catch (const std::bad_any_cast&) {
-            throw std::runtime_error("InputBundle: bad type cast for key '" + key + "' (value)");
+            throw std::runtime_error("InputBundle: bad type cast for key '" + key + "'");
         }
     }
 
-    template <typename T>
-    const T& getValue(const std::string& key) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) {
-            throw std::runtime_error("InputBundle: key '" + key + "' not found");
-        }
-        try {
-            return std::any_cast<const T&>(it->second);
-        } catch (const std::bad_any_cast&) {
-            throw std::runtime_error("InputBundle: bad type cast for key '" + key + "' (value)");
-        }
-    }
-
-    // --- Common operations ---
-
+    // Check key existence
     bool contains(const std::string& key) const {
         return data_.find(key) != data_.end();
     }
@@ -129,9 +79,5 @@ private:
     std::unordered_map<std::string, std::any> data_;
 };
 
-// For stream/logging use
-inline std::ostream& operator<<(std::ostream& os, const InputBundle& bundle) {
-    return os << bundle.describe();
-}
 
 #endif  // ANALYSIS_PIPELINE_CONTEXT_INPUT_BUNDLE_H
