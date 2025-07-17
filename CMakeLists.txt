@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.14)
 
 project(analysis_pipeline_core VERSION 0.1 LANGUAGES CXX)
 
+# Set the project namespace; overrideable by parent scope if desired
+if(NOT DEFINED PROJECT_NAMESPACE)
+  set(PROJECT_NAMESPACE analysis_pipeline)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -88,8 +93,8 @@ add_library(${PROJECT_NAME} SHARED
   ${CMAKE_CURRENT_BINARY_DIR}/G__${PROJECT_NAME}.cxx
 )
 
-add_library(analysis_pipeline::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-add_library(analysis_pipeline::core ALIAS ${PROJECT_NAME})
+add_library(${PROJECT_NAMESPACE}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(${PROJECT_NAMESPACE}::core ALIAS ${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
   VERSION ${PROJECT_VERSION}
@@ -142,7 +147,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 
   install(EXPORT ${PROJECT_NAME}Targets
     FILE ${PROJECT_NAME}Targets.cmake
-    NAMESPACE ${PROJECT_NAME}::
+    NAMESPACE ${PROJECT_NAMESPACE}::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
   )
 
