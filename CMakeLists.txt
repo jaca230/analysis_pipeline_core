@@ -89,6 +89,7 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 add_library(analysis_pipeline::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(analysis_pipeline::core ALIAS ${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
   VERSION ${PROJECT_VERSION}
