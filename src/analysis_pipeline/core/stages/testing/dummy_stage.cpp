@@ -1,4 +1,4 @@
-#include "stages/testing/dummy_stage.h"
+#include "analysis_pipeline/core/stages/testing/dummy_stage.h"
 #include <spdlog/spdlog.h>
 #include <chrono>
 #include <thread>

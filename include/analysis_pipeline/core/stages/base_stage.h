@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include "data/pipeline_data_product_manager.h"  // include manager
+#include "analysis_pipeline/core/data/pipeline_data_product_manager.h"  // include manager
 
 class BaseStage : public TObject {
 public:

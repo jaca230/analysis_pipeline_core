@@ -1,8 +1,8 @@
 #ifndef ANALYSIS_PIPELINE_STAGES_BASEINPUTSTAGE_H
 #define ANALYSIS_PIPELINE_STAGES_BASEINPUTSTAGE_H
 
-#include "stages/base_stage.h"
-#include "context/input_bundle.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
+#include "analysis_pipeline/core/context/input_bundle.h"
 
 class BaseInputStage : public BaseStage {
 public:

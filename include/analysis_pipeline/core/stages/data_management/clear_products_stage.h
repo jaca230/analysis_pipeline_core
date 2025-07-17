@@ -1,7 +1,7 @@
 #ifndef ANALYSIS_PIPELINE_STAGES_CLEARPRODUCTSSTAGE_H
 #define ANALYSIS_PIPELINE_STAGES_CLEARPRODUCTSSTAGE_H
 
-#include "stages/base_stage.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
 #include <vector>
 #include <string>
 

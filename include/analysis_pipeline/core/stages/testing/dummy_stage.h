@@ -1,7 +1,7 @@
 #ifndef ANALYSIS_PIPELINE_STAGES_DUMMYSTAGE_H
 #define ANALYSIS_PIPELINE_STAGES_DUMMYSTAGE_H
 
-#include "stages/base_stage.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
 #include <nlohmann/json.hpp>
 
 class DummyStage : public BaseStage {

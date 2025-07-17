@@ -1,4 +1,4 @@
-#include "stages/base_stage.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
 #include <stdexcept>
 
 BaseStage::BaseStage() = default;

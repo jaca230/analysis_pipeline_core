@@ -1,7 +1,7 @@
 #ifndef ANALYSIS_PIPELINE_STAGES_RANDOM_DATA_GENERATOR_STAGE_H
 #define ANALYSIS_PIPELINE_STAGES_RANDOM_DATA_GENERATOR_STAGE_H
 
-#include "stages/base_stage.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
 #include <random>
 
 class RandomDataGeneratorStage : public BaseStage {

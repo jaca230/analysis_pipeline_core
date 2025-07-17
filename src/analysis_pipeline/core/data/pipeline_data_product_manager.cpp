@@ -1,5 +1,5 @@
-#include "data/pipeline_data_product_manager.h"
-#include "data/pipeline_data_product_lock.h"
+#include "analysis_pipeline/core/data/pipeline_data_product_manager.h"
+#include "analysis_pipeline/core/data/pipeline_data_product_lock.h"
 
 #include "spdlog/spdlog.h"
 #include <stdexcept>

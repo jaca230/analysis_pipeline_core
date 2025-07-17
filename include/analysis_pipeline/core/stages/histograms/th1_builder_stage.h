@@ -1,7 +1,7 @@
 #ifndef ANALYSIS_PIPELINE_STAGES_TH1_BUILDER_STAGE_H
 #define ANALYSIS_PIPELINE_STAGES_TH1_BUILDER_STAGE_H
 
-#include "stages/base_stage.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
 #include <string>
 #include <TH1D.h>
 

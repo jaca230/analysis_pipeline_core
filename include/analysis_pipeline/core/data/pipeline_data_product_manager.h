@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <nlohmann/json.hpp>
 
-#include "data/pipeline_data_product.h"
-#include "data/pipeline_data_product_lock.h"
+#include "analysis_pipeline/core/data/pipeline_data_product.h"
+#include "analysis_pipeline/core/data/pipeline_data_product_lock.h"
 
 class PipelineDataProductManager {
 public:

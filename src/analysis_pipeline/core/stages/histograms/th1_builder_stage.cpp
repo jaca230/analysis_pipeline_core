@@ -1,4 +1,4 @@
-#include "stages/histograms/th1_builder_stage.h"
+#include "analysis_pipeline/core/stages/histograms/th1_builder_stage.h"
 #include <TParameter.h>
 #include <spdlog/spdlog.h>
 

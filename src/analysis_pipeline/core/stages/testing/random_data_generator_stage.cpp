@@ -1,4 +1,4 @@
-#include "stages/testing/random_data_generator_stage.h"
+#include "analysis_pipeline/core/stages/testing/random_data_generator_stage.h"
 
 #include <TParameter.h>
 #include <spdlog/spdlog.h>

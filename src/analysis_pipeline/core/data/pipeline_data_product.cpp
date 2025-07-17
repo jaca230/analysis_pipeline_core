@@ -1,4 +1,4 @@
-#include "data/pipeline_data_product.h"
+#include "analysis_pipeline/core/data/pipeline_data_product.h"
 
 #include <TBufferJSON.h>
 #include <TClass.h>
