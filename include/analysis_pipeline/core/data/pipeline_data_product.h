@@ -19,6 +19,7 @@ public:
 
     // Accessors
     TObject* getObject() const;
+    std::shared_ptr<TObject> getSharedObject() const;
     void setObject(std::unique_ptr<TObject> obj);
     void setSharedObject(std::shared_ptr<TObject> obj);
 

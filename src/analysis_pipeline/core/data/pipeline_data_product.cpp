@@ -31,6 +31,10 @@ TObject* PipelineDataProduct::getObject() const {
     return object_ ? object_.get() : nullptr;
 }
 
+std::shared_ptr<TObject> PipelineDataProduct::getSharedObject() const {
+    return object_;
+}
+
 // Name
 const std::string& PipelineDataProduct::getName() const {
     return name_;
