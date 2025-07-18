@@ -187,6 +187,22 @@ std::vector<PipelineDataProductLock> PipelineDataProductManager::checkoutWriteMu
     return handles;
 }
 
+std::unique_ptr<PipelineDataProduct> PipelineDataProductManager::extractProduct(const std::string& name) {
+    std::unique_lock managerLock(managerMutex_);
+    auto it = products_.find(name);
+    if (it == products_.end()) {
+        spdlog::warn("[PipelineDataProductManager] Tried to extract non-existent product '{}'", name);
+        return nullptr;
+    }
+
+    std::unique_lock productLock(it->second.mutex);  // lock per-product before move
+    auto result = std::move(it->second.product);
+    products_.erase(it);
+    return result;
+    // Lock is released, product is gone from the manager
+}
+
+
 nlohmann::json PipelineDataProductManager::serializeAll() const {
     nlohmann::json output;
 

@@ -34,6 +34,7 @@ public:
     PipelineDataProductLock checkoutWrite(const std::string& name);
     std::vector<PipelineDataProductLock> checkoutReadMultiple(const std::vector<std::string>& names);
     std::vector<PipelineDataProductLock> checkoutWriteMultiple(const std::vector<std::string>& names);
+    std::unique_ptr<PipelineDataProduct> extractProduct(const std::string& name);
 
     nlohmann::json serializeAll() const;
 
