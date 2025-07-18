@@ -25,11 +25,15 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 set(CPM_SPDLOG_VERSION "1.13.0" CACHE STRING "spdlog version")
 set(CPM_NLOHMANN_JSON_VERSION "3.11.3" CACHE STRING "nlohmann_json version")
 
+
 # --------------------- spdlog ---------------------
 if(USE_EXTERNAL_SPDLOG)
   find_package(spdlog REQUIRED)
+  # No new interface target; alias existing imported target twice
   add_library(spdlog_header_only INTERFACE)
   target_link_libraries(spdlog_header_only INTERFACE spdlog::spdlog)
+  add_library(spdlog::spdlog ALIAS spdlog_header_only) # keep original alias (optional)
+  add_library(analysis_pipeline::spdlog_header_only ALIAS spdlog_header_only)
 else()
   CPMAddPackage(
     NAME spdlog
@@ -47,15 +51,18 @@ else()
       $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
+    add_library(spdlog::spdlog ALIAS spdlog_header_only)
+    add_library(analysis_pipeline::spdlog_header_only ALIAS spdlog_header_only)
   endif()
 endif()
-add_library(spdlog::spdlog ALIAS spdlog_header_only)
 
 # --------------------- nlohmann_json ---------------------
 if(USE_EXTERNAL_NLOHMANN_JSON)
   find_package(nlohmann_json REQUIRED)
   add_library(nlohmann_json_header_only INTERFACE)
   target_link_libraries(nlohmann_json_header_only INTERFACE nlohmann_json::nlohmann_json)
+  add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
+  add_library(analysis_pipeline::nlohmann_json_header_only ALIAS nlohmann_json_header_only)
 else()
   CPMAddPackage(
     NAME nlohmann_json
@@ -69,9 +76,12 @@ else()
       $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
+    add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
+    add_library(analysis_pipeline::nlohmann_json_header_only ALIAS nlohmann_json_header_only)
   endif()
 endif()
-add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
+
+
 
 # --------------------- ROOT ---------------------
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
@@ -125,8 +135,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
   ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
-  spdlog::spdlog
-  nlohmann_json::nlohmann_json
+  spdlog_header_only
+  nlohmann_json_header_only
 )
 
 # --------------------- Install Rules ---------------------
