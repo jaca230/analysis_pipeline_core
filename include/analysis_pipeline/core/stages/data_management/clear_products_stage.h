@@ -4,6 +4,7 @@
 #include "analysis_pipeline/core/stages/base_stage.h"
 #include <vector>
 #include <string>
+#include <unordered_set>
 
 class ClearProductsStage : public BaseStage {
 public:
@@ -18,8 +19,9 @@ protected:
 
 private:
     std::vector<std::string> productsToClear_;
-    
-    ClassDefOverride(ClearProductsStage, 1);
+    std::unordered_set<std::string> tagsToClear_;
+
+    ClassDefOverride(ClearProductsStage, 2);
 };
 
 #endif // ANALYSIS_PIPELINE_STAGES_CLEARPRODUCTSSTAGE_H
