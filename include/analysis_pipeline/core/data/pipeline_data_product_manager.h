@@ -5,12 +5,13 @@
 #include <memory>
 #include <shared_mutex>
 #include <vector>
-#include <variant>
 #include <stdexcept>
 #include <nlohmann/json.hpp>
 
 #include "analysis_pipeline/core/data/pipeline_data_product.h"
-#include "analysis_pipeline/core/data/pipeline_data_product_lock.h"
+#include "analysis_pipeline/core/data/pipeline_data_product_read_lock.h"
+#include "analysis_pipeline/core/data/pipeline_data_product_write_lock.h"
+
 
 class PipelineDataProductManager {
 public:
@@ -30,15 +31,15 @@ public:
     std::vector<bool> hasProducts(const std::vector<std::string>& names) const;
     std::vector<std::string> getExistingProducts(const std::vector<std::string>& names) const;
 
-    PipelineDataProductLock checkoutRead(const std::string& name);
-    PipelineDataProductLock checkoutWrite(const std::string& name);
-    std::vector<PipelineDataProductLock> checkoutReadMultiple(const std::vector<std::string>& names);
-    std::vector<PipelineDataProductLock> checkoutWriteMultiple(const std::vector<std::string>& names);
+    PipelineDataProductReadLock checkoutRead(const std::string& name);
+    PipelineDataProductWriteLock checkoutWrite(const std::string& name);
+    std::vector<PipelineDataProductReadLock> checkoutReadMultiple(const std::vector<std::string>& names);
+    std::vector<PipelineDataProductWriteLock> checkoutWriteMultiple(const std::vector<std::string>& names);
     std::unique_ptr<PipelineDataProduct> extractProduct(const std::string& name);
 
     nlohmann::json serializeAll() const;
 
-    //tags
+    // tags
     std::unordered_set<std::string> getAllTags() const;
 
     // Single tag

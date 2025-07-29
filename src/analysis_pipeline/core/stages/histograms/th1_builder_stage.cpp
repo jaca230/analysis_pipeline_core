@@ -23,27 +23,28 @@ void TH1BuilderStage::OnInit() {
 
 void TH1BuilderStage::Process() {
     try {
-        // Check that the input product exists before attempting checkout
+        spdlog::debug("[{}] Process started", Name());
+
         if (!getDataProductManager()->hasProduct(inputProductName_)) {
             spdlog::error("[{}] Input product '{}' not found", Name(), inputProductName_);
             return;
         }
+        spdlog::debug("[{}] Input product '{}' found", Name(), inputProductName_);
 
-        // Checkout input product for reading
         auto inputHandle = getDataProductManager()->checkoutRead(inputProductName_);
         if (!inputHandle.get()) {
             spdlog::error("[{}] Failed to lock input product '{}'", Name(), inputProductName_);
             return;
         }
+        spdlog::debug("[{}] Acquired read lock on input product '{}'", Name(), inputProductName_);
 
-        // Extract member pointer and type
         auto [memberPtr, memberType] = inputHandle->getMemberPointerAndType(valueKey_);
         if (!memberPtr) {
             spdlog::error("[{}] Member '{}' not found in product '{}'", Name(), valueKey_, inputProductName_);
             return;
         }
+        spdlog::debug("[{}] Found member '{}' of type '{}' in input product", Name(), valueKey_, memberType);
 
-        // Attempt to convert the value into a double
         double valueToFill = 0.0;
         bool canFill = false;
 
@@ -64,10 +65,14 @@ void TH1BuilderStage::Process() {
             return;
         }
 
-        if (!canFill) return;
+        if (!canFill) {
+            spdlog::debug("[{}] Could not convert member '{}' to double; skipping fill", Name(), valueKey_);
+            return;
+        }
+        spdlog::debug("[{}] Converted member '{}' value to fill: {}", Name(), valueKey_, valueToFill);
 
-        // Create the histogram if it doesn't exist
         if (!getDataProductManager()->hasProduct(histogramName_)) {
+            spdlog::debug("[{}] Histogram '{}' does not exist; creating new", Name(), histogramName_);
             auto newHist = std::make_unique<TH1D>(histogramName_.c_str(), title_.c_str(), bins_, min_, max_);
             auto newProduct = std::make_unique<PipelineDataProduct>();
             newProduct->setName(histogramName_);
@@ -75,28 +80,34 @@ void TH1BuilderStage::Process() {
             newProduct->addTag("histogram");
             newProduct->addTag("built_by_th1_builder");
             getDataProductManager()->addOrUpdate(histogramName_, std::move(newProduct));
+            spdlog::debug("[{}] Histogram '{}' created", Name(), histogramName_);
+        } else {
+            spdlog::debug("[{}] Histogram '{}' already exists", Name(), histogramName_);
         }
 
-        // Checkout histogram product for writing
+        spdlog::debug("[{}] Attempting to checkout histogram '{}' for writing", Name(), histogramName_);
         auto histHandle = getDataProductManager()->checkoutWrite(histogramName_);
         if (!histHandle.get()) {
-            spdlog::error("[{}] Failed to lock histogram product '{}'", Name(), histogramName_);
+            spdlog::error("[{}] Failed to acquire write lock on histogram '{}'", Name(), histogramName_);
             return;
         }
+        spdlog::debug("[{}] Acquired write lock on histogram '{}'", Name(), histogramName_);
 
         auto* hist = dynamic_cast<TH1*>(histHandle.get()->getObject());
         if (!hist) {
             spdlog::error("[{}] Object named '{}' exists but is not a TH1", Name(), histogramName_);
             return;
         }
+        spdlog::debug("[{}] Successfully cast object '{}' to TH1", Name(), histogramName_);
 
-        // Fill the histogram
         hist->Fill(valueToFill);
+        spdlog::debug("[{}] Filled histogram '{}' with value {}", Name(), histogramName_, valueToFill);
 
     } catch (const std::exception& e) {
         spdlog::error("[{}] Exception in Process: {}", Name(), e.what());
     }
 }
+
 
 
 

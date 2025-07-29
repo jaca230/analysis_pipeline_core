@@ -1,9 +1,7 @@
 #include "analysis_pipeline/core/data/pipeline_data_product_manager.h"
-#include "analysis_pipeline/core/data/pipeline_data_product_lock.h"
-
 #include "spdlog/spdlog.h"
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 // Add or update a single product
 void PipelineDataProductManager::addOrUpdate(const std::string& name, std::unique_ptr<PipelineDataProduct> product) {
@@ -88,41 +86,39 @@ std::vector<std::string> PipelineDataProductManager::getExistingProducts(const s
 }
 
 // Checkout a single product for reading (shared lock)
-PipelineDataProductLock PipelineDataProductManager::checkoutRead(const std::string& name) {
+PipelineDataProductReadLock PipelineDataProductManager::checkoutRead(const std::string& name) {
     std::shared_lock managerLock(managerMutex_);
     auto it = products_.find(name);
     if (it == products_.end()) {
         throw std::runtime_error("Product not found: " + name);
     }
     ProductEntry& entry = it->second;
-
     managerLock.unlock();
 
     std::shared_lock productLock(entry.mutex);
-    return PipelineDataProductLock(entry.product.get(), std::move(productLock));
+    return PipelineDataProductReadLock(entry.product.get(), std::move(productLock));
 }
 
 // Checkout a single product for writing (unique lock)
-PipelineDataProductLock PipelineDataProductManager::checkoutWrite(const std::string& name) {
+PipelineDataProductWriteLock PipelineDataProductManager::checkoutWrite(const std::string& name) {
     std::shared_lock managerLock(managerMutex_);
     auto it = products_.find(name);
     if (it == products_.end()) {
         throw std::runtime_error("Product not found: " + name);
     }
     ProductEntry& entry = it->second;
-
     managerLock.unlock();
 
     std::unique_lock productLock(entry.mutex);
-    return PipelineDataProductLock(entry.product.get(), std::move(productLock));
+    return PipelineDataProductWriteLock(entry.product.get(), std::move(productLock));
 }
 
-// Checkout multiple products for reading (shared locks)
-std::vector<PipelineDataProductLock> PipelineDataProductManager::checkoutReadMultiple(const std::vector<std::string>& names) {
+// Replace the checkoutReadMultiple method (around line 130-145):
+std::vector<PipelineDataProductReadLock> PipelineDataProductManager::checkoutReadMultiple(const std::vector<std::string>& names) {
     std::vector<std::string> sortedNames = names;
     std::sort(sortedNames.begin(), sortedNames.end());
 
-    std::vector<PipelineDataProductLock> handles;
+    std::vector<PipelineDataProductReadLock> handles;
     handles.reserve(sortedNames.size());
 
     std::shared_lock managerLock(managerMutex_);
@@ -142,22 +138,22 @@ std::vector<PipelineDataProductLock> PipelineDataProductManager::checkoutReadMul
     for (auto* entry : entries) {
         std::shared_lock productLock(entry->mutex);
         // You have to be careful with adding these to vectors; the vector cannot
-        // construct new PipelineDataProducts as PipelineDataProductManager is the 
+        // construct new PipelineDataProductReadLocks as PipelineDataProductManager is the 
         // only friend class that is allowed to do so. So we have to make them here
-        // then push them back (cannot do emplace back or similar)
-        PipelineDataProductLock lock(entry->product.get(), std::move(productLock)); // local construction
-        handles.push_back(std::move(lock));                                        // then push_back move
+        // then push them back (cannot do emplace_back or similar)
+        PipelineDataProductReadLock lock(entry->product.get(), std::move(productLock)); // local construction
+        handles.push_back(std::move(lock));                                             // then push_back move
     }
 
     return handles;
 }
 
-// Checkout multiple products for writing (unique locks)
-std::vector<PipelineDataProductLock> PipelineDataProductManager::checkoutWriteMultiple(const std::vector<std::string>& names) {
+// Replace the checkoutWriteMultiple method (around line 150-175):
+std::vector<PipelineDataProductWriteLock> PipelineDataProductManager::checkoutWriteMultiple(const std::vector<std::string>& names) {
     std::vector<std::string> sortedNames = names;
     std::sort(sortedNames.begin(), sortedNames.end());
 
-    std::vector<PipelineDataProductLock> handles;
+    std::vector<PipelineDataProductWriteLock> handles;
     handles.reserve(sortedNames.size());
 
     std::shared_lock managerLock(managerMutex_);
@@ -177,11 +173,11 @@ std::vector<PipelineDataProductLock> PipelineDataProductManager::checkoutWriteMu
     for (auto* entry : entries) {
         std::unique_lock productLock(entry->mutex);
         // You have to be careful with adding these to vectors; the vector cannot
-        // construct new PipelineDataProducts as PipelineDataProductManager is the 
+        // construct new PipelineDataProductWriteLocks as PipelineDataProductManager is the 
         // only friend class that is allowed to do so. So we have to make them here
-        // then push them back (cannot do emplace back or similar)
-        PipelineDataProductLock lock(entry->product.get(), std::move(productLock)); // local construction
-        handles.push_back(std::move(lock));                                        // then push_back move
+        // then push them back (cannot do emplace_back or similar)
+        PipelineDataProductWriteLock lock(entry->product.get(), std::move(productLock)); // local construction
+        handles.push_back(std::move(lock));                                              // then push_back move
     }
 
     return handles;
@@ -195,25 +191,24 @@ std::unique_ptr<PipelineDataProduct> PipelineDataProductManager::extractProduct(
         return nullptr;
     }
 
-    std::unique_lock productLock(it->second.mutex);  // lock per-product before move
+    std::unique_lock productLock(it->second.mutex);
     auto result = std::move(it->second.product);
     products_.erase(it);
     return result;
-    // Lock is released, product is gone from the manager
 }
-
 
 nlohmann::json PipelineDataProductManager::serializeAll() const {
     nlohmann::json output;
 
-    std::shared_lock<std::shared_mutex> lock(managerMutex_);
+    std::shared_lock managerLock(managerMutex_);
     for (const auto& [name, entry] : products_) {
-        std::shared_lock<std::shared_mutex> entryLock(entry.mutex);
+        std::shared_lock entryLock(entry.mutex);
         output[name] = entry.product->serializeToJson();
     }
 
     return output;
 }
+
 
 // Get all unique tags used across all products
 std::unordered_set<std::string> PipelineDataProductManager::getAllTags() const {
