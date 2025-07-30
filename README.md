@@ -26,8 +26,8 @@
 * [MIDAS](https://midas.triumf.ca/) data acquisition system — must be installed and environment variable `MIDASSYS` set
 * CMake 3.14 or newer
 * Git (for submodules)
-* [spdlog](https://github.com/gabime/spdlog) (version 1.13.0 or newer)
-* [nlohmann/json](https://github.com/nlohmann/json) (version 3.11.3 or newer)
+* [spdlog](https://github.com/gabime/spdlog) (version 1.13.0 or newer, automatically downloaded with CPM)
+* [nlohmann/json](https://github.com/nlohmann/json) (version 3.11.3 or newer, automatically downloaded with CPM)
 
 
 ---
